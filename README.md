@@ -3,4 +3,6 @@
 
 🎨 Figma Design: 
 📘 API Documentation (Postman): 
-🧩 Database Design (Eraser.io): 
+
+🧩 Database Design (Eraser.io): https://app.eraser.io/workspace/i9YHmrOdwWsmSpSkrFOF
+
