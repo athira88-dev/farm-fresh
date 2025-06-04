@@ -17,7 +17,7 @@ Farm Fresh is a web application that connects local farmers directly with consum
 
 🔗 Useful Links
 
-🎨 Figma Design: 
+🎨 Figma Design:[View Figma Design](https://www.figma.com/design/MIPdsSmAM5pXz2lD623eLb/Farm-Fresh?node-id=3959-7337&p=f&t=Sii8aEWPJkCge4Ki-0)
 
 📘 API Documentation (Postman): [View API Documentation](https://documenter.getpostman.com/view/31586344/2sB2x2Htg1)
 
