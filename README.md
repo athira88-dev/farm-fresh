@@ -1,4 +1,5 @@
 🥬 Farm Fresh
+
 Farm Fresh is a web application that connects local farmers directly with consumers, promoting fresh, organic, and sustainably grown produce. The platform aims to eliminate middlemen, enabling fair pricing for farmers and fresh food for customers.
 
 🌟 Key Features
