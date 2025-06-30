@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+  <%- include('../../views/partials/user/header') %>
+  <style>
+  body {
+    padding-top: 120px; /* adjust this value if your header height differs */
+  }
+</style>
+
+  <body>
+    <div class="container mt-5">
+      <h2>Manage Addresses</h2>
+
+      <% if (msg) { %>
+  <div class="alert alert-success alert-dismissible fade show" role="alert">
+    <%= msg %>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+  </div>
+<% } %>
+
+
+      <% if (addresses && addresses.length > 0) { %>
+        <% addresses.forEach(addr => { %>
+          <div class="mb-3 border p-3 rounded">
+            <strong><%= addr.addressType %></strong><br>
+            <%= addr.name %><br>
+            <%= addr.street %>, <%= addr.city %><br>
+            <%= addr.state %> - <%= addr.postcode %>, <%= addr.country %><br>
+            Phone: <%= addr.phone %> | Alt Phone: <%= addr.altPhone %>
+            <div class="mt-2">
+              <a href="/edit-address/<%= addr._id %>" class="btn btn-sm btn-outline-primary me-2">Edit</a>
+              <form action="/delete-address/<%= addr._id %>" method="POST" style="display:inline-block;" onsubmit="return confirm('Are you sure you want to delete this address?');">
+                <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+              </form>
+            </div>
+          </div>
+        <% }) %>
+      <% } else { %>
+        <p>No addresses added yet.</p>
+      <% } %>
+
+      <a href="/add-address" class="btn btn-primary mt-3">Add New Address</a>
+    </div>
+
+    <%- include('../../views/partials/user/footer') %>
+  </body>
+</html>

@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+  <%- include('../../views/partials/user/header') %>
+
+  <style>
+    body {
+      padding-top: 120px;
+    }
+  </style>
+
+
+  <body>
+    <div class="container mt-5">
+      <div class="card mx-auto" style="max-width: 600px;">
+        <div class="card-body">
+          <h4 class="text-center mb-4"><%= buttonText %></h4>
+
+          <form action="<%= action %>" method="POST">
+            <div class="mb-3">
+              <label for="addressType" class="form-label">Address Type</label>
+              <select class="form-select" id="addressType" name="addressType" required>
+              <option value="">Select Address Type</option>
+                <option value="Home" <%= address && address.addressType === 'Home' ? 'selected' : '' %>>Home</option>
+              <option value="Work" <%= address && address.addressType === 'Work' ? 'selected' : '' %>>Work</option>
+            <option value="Other" <%= address && address.addressType === 'Other' ? 'selected' : '' %>>Other</option>
+            </select>
+
+            </div>
+
+            <div class="mb-3">
+              <label for="name" class="form-label">Full Name</label>
+              <input type="text" class="form-control" id="name" name="name"
+                     value="<%= address ? address.name : '' %>" required>
+            </div>
+
+            <div class="mb-3">
+              <label for="street" class="form-label">Street Address</label>
+              <input type="text" class="form-control" id="street" name="street"
+                     value="<%= address ? address.street : '' %>" required>
+            </div>
+
+            <div class="mb-3">
+              <label for="city" class="form-label">City</label>
+              <input type="text" class="form-control" id="city" name="city"
+                     value="<%= address ? address.city : '' %>" required>
+            </div>
+
+            <div class="mb-3">
+              <label for="state" class="form-label">State</label>
+              <input type="text" class="form-control" id="state" name="state"
+                     value="<%= address ? address.state : '' %>" required>
+            </div>
+
+            <div class="mb-3">
+              <label for="postcode" class="form-label">Postcode</label>
+              <input type="text" class="form-control" id="postcode" name="postcode"
+                     value="<%= address ? address.postcode : '' %>" required>
+            </div>
+
+            <div class="mb-3">
+              <label for="country" class="form-label">Country</label>
+              <input type="text" class="form-control" id="country" name="country"
+                     value="<%= address ? address.country : '' %>" required>
+            </div>
+
+            <div class="mb-3">
+              <label for="phone" class="form-label">Phone</label>
+              <input type="text" class="form-control" id="phone" name="phone"
+                     value="<%= address ? address.phone : '' %>" required>
+            </div>
+
+            <div class="mb-3">
+              <label for="altPhone" class="form-label">Alternate Phone</label>
+              <input type="text" class="form-control" id="altPhone" name="altPhone"
+                     value="<%= address ? address.altPhone : '' %>">
+            </div>
+
+            <div class="d-flex justify-content-center">
+              <button type="submit" class="btn btn-success me-2"><%= buttonText %></button>
+              <a href="/manage-addresses" class="btn btn-outline-secondary">Cancel</a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <%- include('../../views/partials/user/footer') %>
+  </body>
+</html>

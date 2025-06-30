@@ -1,0 +1,99 @@
+const mongoose = require('mongoose')
+const {Schema} = mongoose;
+
+const productSchema = new Schema({
+    productName:{
+        type:String,
+        required:true,
+        unique:true
+    },
+    description:{
+        type:String,
+        required:true
+    },
+    productImage:{
+        type:[String],
+        required:true
+    },
+    price:{
+        type:Number,
+        required:true
+    },
+       originalPrice:{
+        type:Number,
+        required:true
+    },
+    productQuantity:{
+        type:Number,
+        default:null
+    },
+    unit:{
+        type:String,
+        default:null
+    },
+    category:{
+        type: Schema.Types.ObjectId,
+        ref:'Category',
+        // required:true
+    },
+    effectiveDiscount:{
+        type:Number
+    },
+    // brand:{
+    //     type: Schema.Types.ObjectId,
+    //     ref:'Brand',
+    // },
+    discount:{
+        type:Number,
+        default:0
+    },
+    stock:{
+        type:Number,
+        default:null
+    },
+    isBlocked:{
+        type:Boolean,
+        default:false
+    },
+       isListed:{
+        type:Boolean,
+        default:true
+    },
+    isDeleted: {
+  type: Boolean,
+  default: false
+},
+    status:{
+        type: String,
+        enum:['available','out of stock','Discontinued'],
+        required: true,
+        default: 'available'
+    },
+    coupon: {
+    code: String,
+    description: String
+  },
+    reviews: [
+    {
+      rating: Number,
+      comment: String,
+      author: String,
+      date: { type: Date, default: Date.now }
+    }
+  ]
+  ,highlights: {
+  type: [String],
+  default: []
+},
+specs: {
+  type: Map,
+  of: String,
+  default: {}
+},
+
+},{
+    timestamps:true
+})
+
+const Product = mongoose.model("Product", productSchema)
+module.exports = Product

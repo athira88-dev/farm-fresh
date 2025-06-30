@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<%- include('../../views/partials/user/header') %> <!-- This inserts your entire <head> + spinner + navbar -->
+
+  <body>
+    <!-- Signup Form Container -->
+    <div class="container" style="margin-top: 160px;">
+
+
+      <div class="card shadow mx-auto" style="max-width: 500px;">
+        <div class="card-body p-4">
+          <h2 class="text-center text-primary mb-4">FarmFresh Sign Up</h2>
+
+          <!-- Temp add -->
+          <% if (typeof success !=='undefined' && success) { %>
+            <div class="alert alert-success text-center">
+              <%= success %>
+            </div>
+            <% } %>
+              <!-- Temp add -->
+
+              <% if (typeof message !=='undefined' && message) { %>
+                <div class="alert alert-danger text-center">
+                  <%= message %>
+                </div>
+                <% } %>
+
+
+                  <form id="signform" action="/signup" method="POST" novalidate>
+                    <div class="mb-3">
+                      <label for="fullname" class="form-label">Full Name</label>
+                      <input type="text" class="form-control" id="fullname" name="fullname" placeholder="Your full name"
+                        value="<%= typeof fullname !== 'undefined' ? fullname : '' %>" required />
+                      <div id="error1" class="error-message text-danger mt-1"></div>
+                    </div>
+
+                    <div class="mb-3">
+                      <label for="email" class="form-label">Email</label>
+                      <input type="email" class="form-control" id="email" name="email" placeholder="Your email address"
+                        value="<%= typeof email !== 'undefined' ? email : '' %>" required />
+                      <div id="error2" class="error-message text-danger mt-1"></div>
+                    </div>
+
+                    <div class="mb-3">
+                      <label for="phone" class="form-label">Phone Number</label>
+                      <input type="tel" class="form-control" id="phone" name="phone" pattern="[0-9]{10}"
+                        placeholder="10-digit phone number" value="<%= typeof phone !== 'undefined' ? phone : '' %>"
+                        required />
+                      <div id="error3" class="error-message text-danger mt-1"></div>
+                    </div>
+
+                    <div class="mb-3">
+                      <label for="password" class="form-label">Password</label>
+                      <input type="password" class="form-control" id="password" name="password"
+                        placeholder="Create a password" required />
+                      <div id="error4" class="error-message text-danger mt-1"></div>
+                    </div>
+
+                    <div class="mb-4">
+                      <label for="confirmPassword" class="form-label">Confirm Password</label>
+                      <input type="password" class="form-control" id="confirmPassword" name="confirmPassword"
+                        placeholder="Re-enter your password" required />
+                      <div id="error5" class="error-message text-danger mt-1"></div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100">Sign Up</button>
+                  </form>
+
+                  <div class="text-center my-3">
+                    <span class="text-muted">OR</span>
+                  </div>
+
+                  <a href="/auth/google"
+                    class="btn btn-outline-danger w-100 d-flex align-items-center justify-content-center gap-2">
+                    <img src="https://developers.google.com/identity/images/g-logo.png" alt="Google logo" width="20"
+                      height="20" />
+                    <span>Sign Up with Google</span>
+                  </a>
+
+
+                  <p class="text-center mt-3 mb-0">
+                    Already have an account?
+                    <a href="/login" class="text-primary text-decoration-none">Login</a>
+                  </p>
+
+        </div>
+      </div>
+    </div>
+
+
+    <%- include('../../views/partials/user/footer') %> <!-- Include your footer partial here -->
+      <script>
+        const nameid = document.getElementById("fullname")
+        const emailid = document.getElementById("email")
+        const phoneid = document.getElementById("phone")
+        const passid = document.getElementById("password")
+        const cpassid = document.getElementById("confirmPassword")
+        const error1 = document.getElementById("error1")
+        const error2 = document.getElementById("error2")
+        const error3 = document.getElementById("error3")
+        const error4 = document.getElementById("error4")
+        const error5 = document.getElementById("error5")
+        const signform = document.getElementById("signform")
+
+        function nameValidateChecking() {
+          const nameval = nameid.value
+          const namepattern = /^[A-Za-z\s]+$/;
+
+          if (nameval.trim() === "") {
+            error1.style.display = "block"
+            error1.innerHTML = "Please enter a valid name"
+          } else if (!namepattern.test(nameval)) {
+            error1.style.display = "block"
+            error1.innerHTML = "Name can only contain alphabets and spaces"
+          } else {
+            error1.style.display = "none"
+            error1.innerHTML = ""
+          }
+        }
+
+
+        function emailValidateChecking() {
+          const emailval = emailid.value
+          const emailpattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
+
+
+          if (!emailpattern.test(emailval)) {
+            error2.style.display = "block"
+            error2.innerHTML = "Invalid Format"
+          }
+          else {
+            error2.style.display = "none"
+            error2.innerHTML = ""
+          }
+        }
+        function phoneValidateChecking() {
+          const phoneval = phoneid.value
+
+          if (phoneval.trim() === "") {
+            error3.style.display = "block"
+            error3.innerHTML = "Enter valid phone number"
+          }
+          else if (phoneval.length !== 10) {
+            error3.style.display = "block"
+            error3.innerHTML = "Enter 10 digit"
+          }
+          else {
+            error3.style.display = "none"
+            error3.innerHTML = ""
+          }
+
+        }
+
+        function passValidateChecking() {
+          const passval = passid.value
+          const cpassval = cpassid.value
+          const alpha = /[a-zA-Z]/;
+          const digit = /\d/;
+
+          if (passval.length < 8) {
+            error4.style.display = "block"
+            error4.innerHTML = "Should contain at least 8 characters"
+          }
+          else if (!alpha.test(passval) || !digit.test(passval)) {
+            error4.style.display = "block"
+            error4.innerHTML = "Should contain numbers and alphabets"
+          }
+          else {
+            error4.style.display = "none"
+            error4.innerHTML = ""
+          }
+          if (passval != cpassval) {
+            error5.style.display = "block"
+            error5.innerHTML = "Passwords do not match"
+          }
+          else {
+            error5.style.display = "none"
+            error5.innerHTML = ""
+          }
+
+        }
+        //The e is a parameter that refers to the event object that gets automatically 
+        // passed to an event handler when an event occurs — such as a form submission, button click, key press, etc.
+
+        document.addEventListener('DOMContentLoaded', function () {
+          signform.addEventListener('submit', function (e) {
+            console.log("Form submit event triggered");
+            nameValidateChecking();
+            emailValidateChecking();
+            phoneValidateChecking();
+            passValidateChecking();
+
+            const errors = [error1, error2, error3, error4, error5];
+            const hasError = errors.some(error => error.innerHTML !== "");
+            if (hasError) {
+              e.preventDefault();//stop form submission
+            }
+
+          })
+        })
+      </script>
+
+  </body>
+
+</html>

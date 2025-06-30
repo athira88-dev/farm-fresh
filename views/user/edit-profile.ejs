@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+  <%- include('../../views/partials/user/header') %>
+
+  <style>
+    body {
+      padding-top: 120px; /* same as profile page */
+    }
+  </style>
+
+  <body>
+    <div class="container mt-5">
+      <div class="card mx-auto" style="max-width: 600px;">
+        <div class="card-body">
+          <h3 class="text-center mb-4">Edit Your Profile</h3>
+
+          <% if (message) { %>
+            <div class="alert alert-info text-center"><%= message %></div>
+          <% } %>
+
+          <form action="/edit-profile" method="POST" enctype="multipart/form-data">
+
+            <!-- Name -->
+            <div class="mb-3">
+              <label for="name" class="form-label">Name</label>
+              <input type="text" id="name" name="name" class="form-control" value="<%= user.name %>" required>
+            </div>
+
+            <!-- Email -->
+           <div class="mb-3">
+           <label for="email" class="form-label">Email</label>
+           <input type="email" id="email" name="email" class="form-control" value="<%= user.email %>" required>
+           </div>
+
+            <!-- Phone -->
+            <div class="mb-3">
+              <label for="phone" class="form-label">Phone</label>
+              <input type="tel" id="phone" name="phone" class="form-control" value="<%= user.phone %>">
+            </div>
+
+            <!-- Profile Image -->
+            <div class="mb-3">
+              <label for="profileImage" class="form-label">Profile Image</label>
+              <input type="file" id="profileImage" name="profileImage" class="form-control" accept="image/*">
+              <% if (user.profileImage) { %>
+                <small>Current image:</small><br>
+                <img src="<%= user.profileImage %>" alt="Profile Image" class="rounded-circle mt-2" style="width: 100px; height: 100px; object-fit: cover;">
+              <% } %>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100">Save Changes</button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <%- include('../../views/partials/user/footer') %>
+  </body>
+</html>

@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+  <%- include('../../views/partials/user/header') %>
+
+  <style>
+    body {
+      padding-top: 120px;
+    }
+  </style>
+
+  <body>
+    <div class="container mt-5">
+      <div class="card mx-auto" style="max-width: 600px;">
+        <div class="card-body">
+
+          <h2 class="text-center mb-4">Welcome, <%= user.name %>!</h2>
+
+          <!-- Profile Image -->
+          <div class="text-center mb-4">
+            <img src="<%= user.profileImage || '/images/default-avatar.png' %>" 
+                 alt="Profile Image" 
+                 class="rounded-circle"
+                 style="width: 150px; height: 150px; object-fit: cover;">
+          </div>
+
+          <!-- User Details -->
+          <h4>Your Details</h4>
+          <ul class="list-group mb-4">
+            <li class="list-group-item"><strong>Name:</strong> <%= user.name %></li>
+            <li class="list-group-item"><strong>Email:</strong> <%= user.email %></li>
+            <li class="list-group-item"><strong>Phone:</strong> <%= user.phone || 'N/A' %></li>
+          </ul>
+           <!-- Actions -->
+          <div class="mt-4 text-center">
+            <a href="/edit-profile" class="btn btn-outline-primary me-2">Edit Profile</a>
+            <a href="/forgot-password" class="btn btn-outline-secondary">Change Password</a>
+          </div>
+
+        <h4>Your Addresses</h4>
+
+<% if (addresses && addresses.length > 0) { %>
+  <% addresses.forEach(addr => { %>
+  <div class="mb-3 border p-3 rounded">
+    <strong><%= addr.addressType %></strong><br>
+    <%= addr.name %><br>
+    <%= addr.street %>, <%= addr.city %><br>
+    <%= addr.state %> - <%= addr.postcode %>, <%= addr.country %><br>
+    Phone: <%= addr.phone %> | Alt Phone: <%= addr.altPhone %>
+    <div class="mt-2">
+      <a href="/manage-address" class="btn btn-sm btn-outline-primary">Manage Address</a>
+    </div>
+  </div>
+<% }) %>
+
+<% } else { %>
+  <p>No addresses added yet.</p>
+  <a href="/add-address" class="btn btn-outline-primary me-2">Add Address</a>
+<% } %>
+
+          <!-- Order History -->
+          <h4 class="mt-4">Your Orders</h4>
+          <% if (!orders || orders.length === 0) { %>
+            <p>No orders placed yet.</p>
+          <% } else { %>
+            <table class="table table-bordered table-striped">
+              <thead class="table-light">
+                <tr>
+                  <th>Order ID</th>
+                  <th>Total Amount</th>
+                  <th>Status</th>
+                  <th>Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% orders.forEach(order => { %>
+                  <tr>
+                    <td><%= order._id %></td>
+                    <td>₹<%= order.totalAmount %></td>
+                    <td><%= order.status %></td>
+                    <td><%= order.createdAt.toDateString() %></td>
+                  </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          <% } %>
+
+         
+
+        </div>
+      </div>
+    </div>
+
+    <%- include('../../views/partials/user/footer') %>
+  </body>
+</html>

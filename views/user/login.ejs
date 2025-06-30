@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<%- include('../../views/partials/user/header') %> <!-- Reuse common head + navbar -->
+
+<body>
+  <div class="container" style="margin-top: 160px;">
+    <div class="card shadow mx-auto" style="max-width: 500px;">
+      <div class="card-body p-4">
+        <h2 class="text-center text-primary mb-4">FarmFresh Login</h2>
+
+        <% if (typeof message !== 'undefined' && message) { %>
+          <div class="alert alert-danger text-center">
+            <%= message %>
+          </div>
+        <% } %>
+
+        <form id="loginForm" action="/login" method="POST" novalidate>
+          <div class="mb-3">
+            <label for="email" class="form-label">Email</label>
+            <input type="email" class="form-control" id="email" name="email" placeholder="Enter your email"
+              required />
+            <div id="errorEmail" class="error-message text-danger mt-1"></div>
+          </div>
+
+          <div class="mb-4">
+            <label for="password" class="form-label">Password</label>
+            <input type="password" class="form-control" id="password" name="password"
+              placeholder="Enter your password" required />
+            <div id="errorPassword" class="error-message text-danger mt-1"></div>
+          </div>
+            <div class="text-end mt-1">
+    <a href="/forgot-password" class="text-decoration-none small text-primary">Forgot Password?</a>
+  </div>
+</div>
+
+               <!-- <% if (locals.message && message.length>0) { %>
+          <div class="alert alert-danger text-center">
+            <%= message %>
+          </div>
+        <% } %> -->
+
+          <button type="submit" class="btn btn-primary w-100">Login</button>
+        </form>
+
+        <div class="text-center my-3">
+          <span class="text-muted">OR</span>
+        </div>
+
+        <a href="/auth/google"
+          class="btn btn-outline-danger w-100 d-flex align-items-center justify-content-center gap-2">
+          <img src="https://developers.google.com/identity/images/g-logo.png" alt="Google logo" width="20" height="20" />
+          <span>Login with Google</span>
+        </a>
+
+        <p class="text-center mt-3 mb-0">
+          Don't have an account?
+          <a href="/signup" class="text-primary text-decoration-none">Sign Up</a>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <%- include('../../views/partials/user/footer') %>
+
+  <script>
+    const loginForm = document.getElementById('loginForm');
+    const emailField = document.getElementById('email');
+    const passwordField = document.getElementById('password');
+    const errorEmail = document.getElementById('errorEmail');
+    const errorPassword = document.getElementById('errorPassword');
+
+    loginForm.addEventListener('submit', function (e) {
+      let valid = true;
+      const emailVal = emailField.value.trim();
+      const passVal = passwordField.value.trim();
+      const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+
+      if (!emailPattern.test(emailVal)) {
+        errorEmail.innerHTML = "Invalid email format";
+        valid = false;
+      } else {
+        errorEmail.innerHTML = "";
+      }
+
+      if (passVal.length < 6) {
+        errorPassword.innerHTML = "Password should be at least 6 characters";
+        valid = false;
+      } else {
+        errorPassword.innerHTML = "";
+      }
+
+      if (!valid) {
+        e.preventDefault();
+      }
+    });
+  </script>
+</body>
+
+</html>
