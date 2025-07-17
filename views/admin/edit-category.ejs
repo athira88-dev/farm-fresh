@@ -1,22 +1,30 @@
 <%- include("../../views/partials/admin/header") %>
 <div class="container">
-    <div class="row justify-content-center">
-        <div class="col-md-6 mt-60">
-            <form method="post" action="/admin/editCategory/<%= category._id %>">
-                <div class="d-grid text-end mt-30 col-md-5">
-                    <button class="btn btn-primary" type="submit">Update category</button>
-                </div>
-                <div class="mb-4 mt-30">
-                    <label for="product_name" class="form-label">Name</label>
-                    <input type="text" name="categoryName" value="<%= category.name %>" class="form-control border" />
-                </div>
-                
-                <div class="mb-4">
-                    <label class="form-label">Description</label>
-                    <textarea name="description" class="form-control border"><%= category.description%></textarea>
-                </div>
-            </form>
+  <div class="row justify-content-center">
+    <div class="col-md-6 mt-60">
+
+      <form action="/admin/editCategory/<%= category._id %>" method="POST" style="display: flex; flex-direction: column; gap: 15px;">
+        
+        <div style="display: flex; align-items: center;">
+          <label style="width: 120px; margin-right: 10px;">Category Name:</label>
+          <input type="text" name="name" value="<%= oldInput?.name || category.name %>" style="flex: 1;" />
         </div>
+        <% if (errors && errors.name) { %>
+          <p style="color:red; margin-left: 130px;"><%= errors.name %></p>
+        <% } %>
+
+        <div style="display: flex; align-items: flex-start;">
+          <label style="width: 120px; margin-right: 10px; padding-top: 6px;">Description:</label>
+          <textarea name="description" style="flex: 1;" rows="4"><%= oldInput?.description || category.description %></textarea>
+        </div>
+        <% if (errors && errors.description) { %>
+          <p style="color:red; margin-left: 130px;"><%= errors.description %></p>
+        <% } %>
+
+        <button type="submit" style="width: 100px; align-self: flex-start;">Update Category</button>
+      </form>
+
     </div>
+  </div>
 </div>
 <%- include("../../views/partials/admin/footer") %>

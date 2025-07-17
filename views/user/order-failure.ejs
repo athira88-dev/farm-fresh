@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Order Failed</title>
+  <style>
+    .container {
+      text-align: center;
+      padding: 50px;
+    }
+    img {
+      width: 200px;
+      margin-bottom: 20px;
+    }
+    .btn-group {
+      margin-top: 30px;
+    }
+    .btn {
+      margin: 0 10px;
+      padding: 10px 20px;
+      background-color: #dc3545;
+      color: white;
+      border: none;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    .btn.retry {
+      background-color: #007bff;
+    }
+    .btn.home {
+      background-color: #28a745;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <img src="/img/payment-failed.png" alt="Failed" width="80" height="100" />
+  <h2>Payment Failed</h2>
+
+  <% if (typeof errorStatus !== 'undefined') { %>
+    <p>Status: <%= errorStatus %></p>
+  <% } %>
+
+  <% if (typeof errorMessage !== 'undefined') { %>
+    <p>Error: <%= errorMessage %></p>
+  <% } %>
+
+  <h2>Oops! Something went wrong with your payment.</h2>
+
+  <div class="btn-group">
+    <!-- Replace /retry-payment/<%= orderId %> with your actual retry route -->
+    <form action="/retry-payment/<%= orderId %>" method="GET" style="display:inline;">
+   
+      <button type="submit" class="btn retry">Retry Payment</button>
+    </form>
+    
+    <a href="/" class="btn home">Back to Home</a>
+  </div>
+</div>
+</body>
+</html>

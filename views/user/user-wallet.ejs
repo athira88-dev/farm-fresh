@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<%- include("../../views/partials/user/header") %> 
+  <style>
+    body {
+  padding-top: 120px; /* or height of your header */
+}
+  </style>
+
+  <body>
+    <div class="container mt-5">
+   <h3>Your Wallet</h3>
+<p>Current Balance: £<%= balance.toFixed(2) %></p>
+
+<% if (transactions.length > 0) { %>
+  <h5 class="mt-4">Transaction History</h5>
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Type</th>
+        <th>Amount</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% transactions.forEach(txn => { %>
+        <tr>
+          <td><%= new Date(txn.date).toLocaleDateString() %></td>
+          <td><%= txn.type %></td>
+          <td>£<%= txn.amount.toFixed(2) %></td>
+          <td><%= txn.description %></td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+<% } else { %>
+  <p>No transactions yet.</p>
+<% } %>
+
+      
+      <a href="/user-profile" class="btn btn-secondary mt-3">Back to Profile</a>
+    </div>
+
+
+
+
+
+  <%- include("../../views/partials/user/footer") %>
+  </body>
+</html>

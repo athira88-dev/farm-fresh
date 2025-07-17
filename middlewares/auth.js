@@ -1,27 +1,42 @@
-const User=require('../models/userSchema')
+const User = require('../models/userSchema');
 
-//Checks if the user is logged in.
 
-//Checks if they exist and are not blocked.
 
-//Proceeds if valid; redirects otherwise.
-const userAuth=(req,res,next)=>{
-    // console.log("Session user ID:", req.session.user); // log session user ID
-    if(req.session.user){
-        User.findById(req.session.user).then(data=>{
-            if(data && !data.isBlocked){
-                 // Make user data available in EJS
-                res.locals.user = data;
-                next();
-            }else{res.redirect('/login')}
-        }).catch(error=>{
-            console.log("Error in user auth middleware",error)
-            res.status(500).send('Internal Server error')
-        })
-    }else{
-        res.redirect('/login')
+const userAuth = (req, res, next) => {
+    if (req.session.user) {
+        User.findById(req.session.user)
+            .then(user => {
+                if (user && !user.isBlocked) {
+                    res.locals.user = user;
+                    req.user = user;
+                    next();
+                } else {
+                    // Set message in cookie before destroying session
+                    res.cookie('blockMessage', 'You have been blocked by admin.', {
+                        maxAge: 5000, // 5 seconds
+                        httpOnly: true
+                    });
+
+                    req.session.destroy(err => {
+                        if (err) {
+                            console.log("Error destroying session:", err);
+                        }
+                        res.redirect('/login');
+                    });
+                }
+            })
+            .catch(error => {
+                console.log("Error in user auth middleware:", error);
+                res.status(500).send('Internal Server Error');
+            });
+    } else {
+        res.redirect('/login');
     }
-}
+};
+
+
+
+
 
 // const adminAuth=(req,res,next)=>{
 //         User.findOne({isAdmin:true}).then(data=>{

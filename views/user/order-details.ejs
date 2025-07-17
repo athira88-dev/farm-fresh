@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Order Details</title>
+  <!-- Bootstrap CSS CDN -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+</head>
+<body class="bg-light py-5">
+
+  <div class="container bg-white p-5 rounded shadow-sm" style="max-width: 700px;">
+    <h1 class="mb-4">Order Details</h1>
+
+    <p><strong>Order ID:</strong> <%= order.orderId %></p>
+    <p><strong>Status:</strong> <%= order.status %></p>
+    <p><strong>Order Date:</strong> <%= new Date(order.createdOn).toLocaleString() %></p>
+    <p><strong>Payment Method:</strong> <%= order.paymentMethod %></p>
+    <p><strong>Coupon Applied:</strong> <%= order.couponApplied ? 'Yes' : 'No' %></p>
+
+    <h2 class="mt-4">Items</h2>
+    <table class="table table-bordered mt-3">
+      <thead class="table-light">
+        <tr>
+          <th>Product</th>
+          <th>Quantity</th>
+          <th>Original Price (£)</th>
+          <th>Discount (%)</th>
+          <th>Price After Discount (£)</th>
+          <th>Subtotal (£)</th>
+          <% if((order.status === 'Pending' || order.status === 'Processing') && order.orderedItems.length > 1) { %>
+            <th>Action</th>
+          <% } %>
+        </tr>
+      </thead>
+      <tbody>
+        <% order.orderedItems.forEach((item, index) => { %>
+          <tr>
+            <td><%= item.product ? item.product.productName : 'N/A' %></td>
+            <td><%= item.quantity %></td>
+            <td>£<%= (item.originalPrice ?? item.price).toFixed(2) %></td>
+            <td><%= item.discountApplied != null ? item.discountApplied : 0 %>%</td>
+            <td>£<%= item.price.toFixed(2) %></td>
+            <td>£<%= (item.price * item.quantity).toFixed(2) %></td>
+            <% if((order.status === 'Pending' || order.status === 'Processing') && order.orderedItems.length > 1) { %>
+              <td>
+                <form id="cancel-item-form-<%= order._id %>-<%= index %>" 
+                      action="/orders/<%= order._id %>/cancel-item" 
+                      method="POST" style="margin:0;">
+                  <input type="hidden" name="itemIndex" value="<%= index %>" />
+                  <button type="button" 
+                          class="btn btn-sm btn-warning" 
+                          onclick="confirmCancelItem('<%= order._id %>', '<%= index %>')">
+                    Cancel Item
+                  </button>
+                </form>
+              </td>
+            <% } %>
+          </tr>
+        <% }) %>
+
+        <tr class="fw-bold">
+          <td colspan="<%= ((order.status === 'Pending' || order.status === 'Processing') && order.orderedItems.length > 1) ? 6 : 5 %>" class="text-end">Original Total:</td>
+          <td>£<%= order.totalOriginalAmount %></td>
+        </tr>
+
+        <tr class="fw-bold text-danger">
+          <td colspan="<%= ((order.status === 'Pending' || order.status === 'Processing') && order.orderedItems.length > 1) ? 6 : 5 %>" class="text-end">Discount:</td>
+          <td>– £<%= order.couponDiscount ?? '0.00' %></td>
+        </tr>
+
+        <tr class="fw-bold">
+          <td colspan="<%= ((order.status === 'Pending' || order.status === 'Processing') && order.orderedItems.length > 1) ? 6 : 5 %>" class="text-end">Subtotal After Discount:</td>
+          <td>£<%= order.totalFinalAmount %></td>
+        </tr>
+
+        <tr>
+          <td colspan="<%= ((order.status === 'Pending' || order.status === 'Processing') && order.orderedItems.length > 1) ? 6 : 5 %>" class="text-end">Shipping Cost:</td>
+          <td>£<%= order.shippingCost %></td>
+        </tr>
+
+        <tr>
+          <td colspan="<%= ((order.status === 'Pending' || order.status === 'Processing') && order.orderedItems.length > 1) ? 6 : 5 %>" class="text-end">Tax:</td>
+          <td>£<%= order.taxAmount %></td>
+        </tr>
+
+        <tr class="fw-bold bg-light">
+          <td colspan="<%= ((order.status === 'Pending' || order.status === 'Processing') && order.orderedItems.length > 1) ? 6 : 5 %>" class="text-end">Grand Total:</td>
+          <td>£<%= order.grandTotal %></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2 class="mt-4">Shipping Address</h2>
+    <% if(order.address) { %>
+      <div class="mb-3">
+        <p class="mb-1"><%= order.address.street %></p>
+        <p class="mb-1"><%= order.address.city %>, <%= order.address.state %> - <%= order.address.zip %></p>
+        <p class="mb-1"><%= order.address.country %></p>
+        <p class="mb-1">Phone: <%= order.address.phone %></p>
+      </div>
+    <% } else { %>
+      <p class="text-muted fst-italic">No address provided.</p>
+    <% } %>
+    
+    <% if (order.status !== 'Cancelled' && order.returnStatus !== 'Returned') { %>
+      <a href="/orders/<%= order._id %>/invoice" class="btn btn-primary">Download Invoice (PDF)</a>
+    <% } %>
+
+    <% if(order.status === 'Delivered') { %>
+      <h2 class="mt-4">Return Order</h2>
+      <% if(order.returnStatus !== 'Return Requested' && order.returnStatus !== 'Returned') { %>
+        <form action="/orders/<%= order._id %>/return" method="POST" onsubmit="return !!document.getElementById('returnReason').value.trim() || alert('Return reason is required!');">
+          <div class="mb-3">
+            <label for="returnReason" class="form-label">Reason for Return <span class="text-danger">*</span></label>
+            <textarea id="returnReason" name="returnReason" class="form-control" rows="3" required></textarea>
+          </div>
+          <button type="submit" class="btn btn-danger">Submit Return Request</button>
+        </form>
+      <% } else { %>
+        <p class="text-success">Your return request is being processed.</p>
+      <% } %>
+    <% } %>
+
+    <% if (order.returnStatus === 'Returned') { %>
+      <p class="text-success">Your return has been verified. Refund credited to wallet.</p>
+    <% } else if (order.returnStatus === 'Return Requested') { %>
+      <p class="text-warning">Return requested. Awaiting admin approval.</p>
+    <% } %>
+  </div>
+
+  <!-- Bootstrap JS Bundle with Popper (optional for components) -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script>
+    function confirmCancelItem(orderId, itemIndex) {
+      Swal.fire({
+        title: 'Cancel Item?',
+        text: "Are you sure you want to cancel this item?",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Yes, cancel it!',
+        cancelButtonText: 'No'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          const formId = `cancel-item-form-${orderId}-${itemIndex}`;
+          document.getElementById(formId).submit();
+        }
+      });
+    }
+  </script>
+</body>
+</html>

@@ -44,7 +44,8 @@ const addressSchema = new Schema({
             type: String,
             required: false,
             default: '',
-        }
+        },
+            isDefault: { type: Boolean, default: false } 
 
     }]
 })

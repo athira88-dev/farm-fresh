@@ -11,21 +11,30 @@ const orderSchema = new Schema({
   },
 
 
-  orderedItems: [{
-    product: {
-      type: Schema.Types.ObjectId,
-      ref: 'Product',
-      required: true
-    },
-    quantity: {
-      type: Number,
-      required: true
-    },
-    price: {
-      type: Number,
-      default: 0
-    }
-  }],
+orderedItems: [{
+  product: {
+    type: Schema.Types.ObjectId,
+    ref: 'Product',
+    required: true
+  },
+  quantity: {
+    type: Number,
+    required: true
+  },
+  originalPrice: {        // <-- Add this
+    type: Number,
+    required: true
+  },
+  discountApplied: {      // <-- Add this (percentage)
+    type: Number,
+    default: 0
+  },
+  price: {                // Final per unit price after discount
+    type: Number,
+    default: 0
+  }
+}],
+
 
   totalPrice: {
     type: Number,
@@ -39,6 +48,19 @@ const orderSchema = new Schema({
     type: Number,
     default: 0
   },
+    taxAmount: {
+    type: Number,
+    default: 0
+  },
+  shippingCost: {
+    type: Number,
+    default: 0
+  },
+  grandTotal: {
+    type: Number,
+    default: 0
+  },
+
     user: {
     type: Schema.Types.ObjectId,
     ref: 'User',
@@ -56,10 +78,20 @@ const orderSchema = new Schema({
     type: Date
 
   },
-  status: {
+ status: {
+  type: String,
+  enum: ['Pending', 'Paid','Processing', 'Failed','Shipped', 'Delivered', 'Cancelled', 'Returned', 'Out for delivery'], // Add 'Paid'
+  default: 'Pending'
+},
+
+    returnReason: {
     type: String,
-    required: true,
-    enum: ['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled', 'Return Request', 'Returned']
+    default: null
+  },
+  returnStatus: {
+    type: String,
+    enum: ['None', 'Return Requested', 'Returned'],
+    default: 'None'
   },
   createdOn: {
     type: Date,
@@ -70,6 +102,13 @@ const orderSchema = new Schema({
     type: Boolean,
     default: false
   },
+paymentMethod: {
+  type: String,
+  enum: ['COD', 'Online', 'PayPal'], // Add 'PayPal'
+  default: 'COD'
+}
+
+
 
 
 });

@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Checkout</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: #f9f9f9;
+    }
+    .container {
+      max-width: 600px;
+      margin: auto;
+      background: #fff;
+      padding: 20px;
+      border-radius: 5px;
+      box-shadow: 0 0 8px rgba(0,0,0,0.1);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: left;
+    }
+    .total {
+      font-weight: bold;
+    }
+    label {
+      display: block;
+      margin-top: 15px;
+      margin-bottom: 5px;
+    }
+    input[type="text"], select {
+      width: 100%;
+      padding: 8px;
+      box-sizing: border-box;
+      margin-bottom: 15px;
+    }
+    .payment-methods label {
+      display: inline-block;
+      margin-right: 10px;
+      cursor: pointer;
+    }
+    #paypal-button-container {
+      margin-top: 15px;
+      display: none;
+    }
+    button.place-order-btn {
+      background: #3bcf0d;
+      color: white;
+      border: none;
+      padding: 12px;
+      width: 100%;
+      font-size: 16px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Checkout</h2>
+
+    <% if (!cartItems || cartItems.length === 0) { %>
+      <p>Your cart is empty.</p>
+    <% } else { %>
+      <table>
+        <thead>
+          <tr>
+            <th>Product</th>
+            <th>Qty</th>
+            <th>Price</th>
+            <th>Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% cartItems.forEach(item => { %>
+            <tr>
+              <td><%= item.productName %></td>
+              <td><%= item.quantity %></td>
+              <td>£<%= item.finalPrice.toFixed(2) %></td>
+              <td>£<%= (item.finalPrice * item.quantity).toFixed(2) %></td>
+            </tr>
+          <% }) %>
+          <tr class="total">
+            <td colspan="3" style="text-align:right;">Grand Total:</td>
+            <td>£<%= grandTotal %></td>
+          </tr>
+        </tbody>
+      </table>
+    <% } %>
+
+    <form action="/place-order" method="POST" id="checkout-form">
+      <label for="selectedAddressId">Shipping Address</label>
+      <select name="selectedAddressId" id="selectedAddressId" required>
+        <% addresses.forEach(addr => { %>
+          <option value="<%= addr._id %>" <%= selectedAddressId === addr._id.toString() ? 'selected' : '' %>>
+            <%= addr.addressType %> - <%= addr.street %>, <%= addr.city %>
+          </option>
+        <% }) %>
+      </select>
+
+      <label>Payment Method</label>
+      <div class="payment-methods">
+        <label><input type="radio" name="paymentMethod" value="COD" <%= paymentMethod === 'COD' ? 'checked' : '' %> required> Cash on Delivery</label>
+        <label><input type="radio" name="paymentMethod" value="Card" <%= paymentMethod === 'Card' ? 'checked' : '' %>> Card</label>
+        <label><input type="radio" name="paymentMethod" value="PayPal" <%= paymentMethod === 'PayPal' ? 'checked' : '' %>> PayPal</label>
+      </div>
+
+      <input type="text" name="couponApplied" placeholder="Coupon Code" value="<%= couponCode || '' %>">
+
+      <input type="hidden" name="discount" value="<%= discount || 0 %>">
+
+      <button type="submit" class="place-order-btn" id="place-order-btn">Place Order</button>
+    </form>
+
+    <div id="paypal-button-container"></div>
+  </div>
+
+  <script src="https://www.paypal.com/sdk/js?client-id=AS6jTbViQm4oXSHQqT7q7i5kBXVev28yI0DvXDJtGQLfDF09_EtL91mtKbNB7y8dZBAFt59OlDIKhbb3&currency=GBP"></script>
+
+  <script>
+    const paypalRadio = document.querySelector('input[value="PayPal"]');
+    const placeOrderBtn = document.getElementById('place-order-btn');
+    const paypalContainer = document.getElementById('paypal-button-container');
+    const form = document.getElementById('checkout-form');
+
+    function togglePaypal(show) {
+      if (show) {
+        paypalContainer.style.display = 'block';
+        placeOrderBtn.style.display = 'none';
+      } else {
+        paypalContainer.style.display = 'none';
+        placeOrderBtn.style.display = 'block';
+      }
+    }
+
+    document.querySelectorAll('input[name="paymentMethod"]').forEach(el => {
+      el.addEventListener('change', () => {
+        togglePaypal(paypalRadio.checked);
+      });
+    });
+
+    // Initially toggle on page load
+    togglePaypal(paypalRadio.checked);
+
+    paypal.Buttons({
+      createOrder: function(data, actions) {
+        const grandTotal = '<%= grandTotal %>';
+        return actions.order.create({
+          purchase_units: [{
+            amount: { value: grandTotal }
+          }]
+        });
+      },
+      onApprove: function(data, actions) {
+        const selectedAddressId = document.getElementById('selectedAddressId').value;
+        if (!selectedAddressId) {
+          alert('Please select a shipping address.');
+          return;
+        }
+
+        return actions.order.capture().then(function(details) {
+          return fetch('/place-paypal-order', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              orderID: data.orderID,
+              payerID: data.payerID,
+              addressId: selectedAddressId,
+              discount: parseFloat(document.querySelector('input[name="discount"]').value) || 0,
+              couponApplied: document.querySelector('input[name="couponApplied"]').value || ''
+            })
+          })
+          .then(res => res.text())
+          .then(html => {
+            document.open();
+            document.write(html);
+            document.close();
+          })
+          .catch(err => {
+            alert('Error processing order. Please try again.');
+            console.error(err);
+          });
+        });
+      },
+      onError: function(err) {
+        alert('Payment failed or canceled. Please try again.');
+        window.location.href = '/order-failure';
+      }
+    }).render('#paypal-button-container');
+  </script>
+</body>
+</html>

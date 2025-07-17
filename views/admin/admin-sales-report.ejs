@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Admin Sales Report</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 900px;
+      margin: 30px auto;
+      padding: 10px;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    form {
+      margin-bottom: 30px;
+      display: flex;
+      gap: 15px;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+    }
+    label {
+      font-weight: bold;
+    }
+    input, select, button {
+      padding: 6px 10px;
+      font-size: 14px;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin-top: 20px;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 10px;
+      text-align: center;
+    }
+    th {
+      background-color: #4CAF50;
+      color: white;
+    }
+    .no-data {
+      text-align: center;
+      color: #666;
+      margin-top: 30px;
+      font-style: italic;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Sales Report</h1>
+
+  <form id="reportForm">
+    <label for="startDate">Start Date:</label>
+    <input type="date" id="startDate" name="startDate" required />
+
+    <label for="endDate">End Date:</label>
+    <input type="date" id="endDate" name="endDate" required />
+
+    <label for="groupBy">Group By:</label>
+    <select id="groupBy" name="groupBy" required>
+      <option value="">Select</option>
+      <option value="day">Day</option>
+      <option value="week">Week</option>
+      <option value="month">Month</option>
+      <option value="year">Year</option>
+    </select>
+
+    <button type="submit">Get Report</button>
+  </form>
+
+  <div id="reportResult">
+    <!-- Report table will appear here -->
+  </div>
+
+<script>
+  const form = document.getElementById('reportForm');
+  const reportResult = document.getElementById('reportResult');
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const startDate = form.startDate.value;
+    const endDate = form.endDate.value;
+    const groupBy = form.groupBy.value;
+
+    if (!startDate || !endDate || !groupBy) {
+      alert('Please fill all fields');
+      return;
+    }
+
+    // Clear previous report
+    reportResult.innerHTML = 'Loading report...';
+
+    try {
+      const params = new URLSearchParams({ startDate, endDate, groupBy });
+      const res = await fetch('/admin/sales-report?' + params.toString());
+      const data = await res.json();
+
+      if (res.ok && data.reportData && data.reportData.length > 0) {
+        renderReportTable(data.reportData, groupBy);
+      } else {
+        reportResult.innerHTML = '<p class="no-data">No data found for the selected period.</p>';
+      }
+    } catch (err) {
+      reportResult.innerHTML = '<p class="no-data">Failed to load report.</p>';
+      console.error(err);
+    }
+  });
+
+  function renderReportTable(reportData, groupBy) {
+    let html = `
+      <table>
+        <thead>
+          <tr>
+            <th>${groupBy.charAt(0).toUpperCase() + groupBy.slice(1)}</th>
+            <th>Total Orders</th>
+            <th>Total Price (£)</th>
+            <th>Total Discount (£)</th>
+            <th>Final Amount (£)</th>
+          </tr>
+        </thead>
+        <tbody>
+    `;
+
+    for (const item of reportData) {
+      let periodLabel = '';
+
+      if (groupBy === 'day') {
+        const { year, month, day } = item._id;
+        periodLabel = `${day}/${month}/${year}`;
+      } else if (groupBy === 'week') {
+        const { year, week } = item._id;
+        periodLabel = `Week ${week}, ${year}`;
+      } else if (groupBy === 'month') {
+        const { year, month } = item._id;
+        periodLabel = `${month}/${year}`;
+      } else if (groupBy === 'year') {
+        const { year } = item._id;
+        periodLabel = `${year}`;
+      } else {
+        periodLabel = 'Overall';
+      }
+
+      html += `
+        <tr>
+          <td>${periodLabel}</td>
+          <td>${item.totalOrders}</td>
+          <td>${item.totalPrice.toFixed(2)}</td>
+          <td>${item.totalDiscount.toFixed(2)}</td>
+          <td>${item.totalFinalAmount.toFixed(2)}</td>
+        </tr>
+      `;
+    }
+
+    html += `
+        </tbody>
+      </table>
+    `;
+
+    reportResult.innerHTML = html;
+  }
+</script>
+
+</body>
+</html>

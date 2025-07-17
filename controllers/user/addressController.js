@@ -14,6 +14,10 @@ async function findOrCreateAddressDoc(userId) {
 // Show all addresses page
 const getManageAddresses = async (req, res) => {
   try {
+     const returnTo = req.query.returnTo;
+  if (returnTo) {
+    req.session.returnTo = returnTo;  // save in session
+  }
     const msg = req.query.msg || null;
     const userId = res.locals.user._id;
     const addressDoc = await Address.findOne({ userId });
@@ -51,7 +55,10 @@ const postAddAddress = async (req, res) => {
     });
 
     await addressDoc.save();
-    res.redirect('/manage-address');
+       const redirectTo = req.session.returnTo || '/manage-address';
+         delete req.session.returnTo;  // clear it after use
+    res.redirect(redirectTo);  // redirect back based on query param
+    // res.redirect('/manage-address');
   } catch (err) {
     console.error(err);
     res.status(500).send('Failed to add address');
@@ -84,6 +91,7 @@ const postEditAddress = async (req, res) => {
     const userId = res.locals.user._id;
     const addressId = req.params.addressId;
     const { addressType, name, street, city, state, postcode, country, phone, altPhone } = req.body;
+  
 
     const addressDoc = await Address.findOne({ userId });
     if (!addressDoc) return res.redirect('/manage-address');
@@ -103,7 +111,9 @@ const postEditAddress = async (req, res) => {
     address.altPhone = altPhone;
 
     await addressDoc.save();
-    res.redirect('/manage-address');
+     const redirectTo = req.session.returnTo || '/manage-address';
+         delete req.session.returnTo;  // clear it after use
+    res.redirect(redirectTo);  // redirect back based on query param
   } catch (err) {
     console.error(err);
     res.status(500).send('Failed to update address');
@@ -121,8 +131,10 @@ const postDeleteAddress = async (req, res) => {
 
     addressDoc.address = addressDoc.address.filter(addr => addr._id.toString() !== addressId);
     await addressDoc.save();
+    const returnTo = req.query.returnTo || '/manage-address';
+    res.redirect(returnTo);
 
-     res.redirect('/manage-address?msg=Address deleted successfully');
+    //  res.redirect('/manage-address?msg=Address deleted successfully');
   } catch (err) {
     console.error(err);
     res.status(500).send('Failed to delete address');

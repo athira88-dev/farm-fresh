@@ -10,15 +10,13 @@ const userSchema = new Schema({
         type: String,
         required: true,
         unique: true
-
     },
     phone: {
         type: String,
         required: false,
-        unique: false, // must be unique when it exists
-        sparse: true,  // ignore null/undefined values in unique check(user may leave it blank as its not required)
+        unique: false,
+        sparse: true,
         default: null
-
     },
     googleId: {
         type: String,
@@ -30,19 +28,9 @@ const userSchema = new Schema({
         required: false
     },
     profileImage: {
-  type: String,
-  default: '' // or a default avatar path like '/images/default-avatar.png'
-},
-
-// address: {
- 
-//   street: { type: String },
-//   city: { type: String },
-//   postcode: { type: String },
-//   state: { type: String },
-//   country: { type: String }
-// },
-
+        type: String,
+        default: ''
+    },
     isBlocked: {
         type: Boolean,
         default: false
@@ -52,8 +40,20 @@ const userSchema = new Schema({
         default: false
     },
     cart: [{
-        type: Schema.Types.ObjectId, //// List of cart item IDs linked to the user
-        ref: "Cart"
+        product: {
+            type: Schema.Types.ObjectId,
+            ref: 'Product',
+            required: true
+        },
+        quantity: {
+            type: Number,
+            default: 1,
+            min: 1
+        }
+    }],
+    wishlist: [{
+        type: Schema.Types.ObjectId,
+        ref: 'Product'
     }],
     wallet: [{
         type: Schema.Types.ObjectId,
@@ -63,21 +63,23 @@ const userSchema = new Schema({
         type: Schema.Types.ObjectId,
         ref: "Order"
     }],
-    // createdOn: {
-    //     type: Date,
-    //     default: Date.now
-    // },
-    referralCode: {
-        type: String
-    },
-    redeemed: {
-        type: Boolean,
-        default:false
-    },
-    redeemedUsers: [{
-        type: Schema.Types.ObjectId,
-        ref: "User"
-    }],
+referralCode: {
+    type: String,
+    unique: true,
+    uppercase: true,
+    trim: true,
+   
+  },
+  referredBy: {
+    type: String,
+    uppercase: true,
+    trim: true,
+    default: null
+  },
+  redeemedUsers: [{
+    type: Schema.Types.ObjectId,
+    ref: 'User'
+  }],
     // Stores user's past searches with category, brand, and timestamp
     searchHistory: [{
         category: {
@@ -93,16 +95,38 @@ const userSchema = new Schema({
         }
     }],
     otp: {
-    type: String,
-    required: false
-},
+        type: String,
+        required: false
+    },
     otpExpires: {
-    type: Date,
-    required: false
+        type: Date,
+        required: false
+    }
+}, { timestamps: true })
+
+// Generate unique referral code before saving user
+function generateReferralCode(length = 6) {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let code = '';
+    for (let i = 0; i < length; i++) {
+        code += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return code;
 }
-},{ timestamps: true })
+
+userSchema.pre('save', async function (next) {
+    if (!this.referralCode) {
+        let code;
+        let existing;
+        do {
+            code = generateReferralCode();
+            existing = await mongoose.models.User.findOne({ referralCode: code });
+        } while (existing);
+        this.referralCode = code;
+    }
+    next();
+})
 
 const User = mongoose.model("User", userSchema)
-// This creates a model called "User" using the schema you defined (userSchema).
+
 module.exports = User
-//You can now use User to create, find, update, or delete user documents.

@@ -21,12 +21,18 @@ const productSchema = new Schema({
     },
        originalPrice:{
         type:Number,
-        required:true
+        required:false
     },
     productQuantity:{
         type:Number,
         default:null
     },
+    maxQuantity: {
+  type: Number,
+  default: 5, // Set your default max quantity here
+  min: 1
+},
+
     unit:{
         type:String,
         default:null
@@ -51,6 +57,14 @@ const productSchema = new Schema({
         type:Number,
         default:null
     },
+      isOutOfStock: {
+    type: Boolean,
+    default: false
+  },
+  lowStockWarning: {
+    type: Number,
+    default: 5 // optional threshold for alerts
+  },
     isBlocked:{
         type:Boolean,
         default:false
@@ -90,6 +104,25 @@ specs: {
   of: String,
   default: {}
 },
+
+  productOffer: {
+    isActive: {
+      type: Boolean,
+      default: false
+    },
+    discountPercentage: {
+      type: Number,
+      min: 0,
+      max: 100
+    },
+    startDate: {
+      type: Date
+    },
+    endDate: {
+      type: Date
+    }
+  },
+
 
 },{
     timestamps:true

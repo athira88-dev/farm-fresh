@@ -1,114 +1,232 @@
 const Category = require('../../models/categorySchema')
 
 
+
+
+// Render categories list page
 const categoryInfo = async (req, res) => {
   try {
-    const search = req.query.search || '';
-    const page = parseInt(req.query.page);
-    const validPage = (isNaN(page) || page < 1) ? 1 : page;
-    const limit = 4;
-    const skip = (validPage - 1) * limit;
-       const query = {
+    const searchQuery = req.query.search ? req.query.search.trim() : '';
+    const page = parseInt(req.query.page) || 1;
+    const limit = 5;
+
+    const filter = {
       isDeleted: false,
-      name: { $regex: search, $options: 'i' } // case-insensitive search
+      $or: [
+        { name: { $regex: searchQuery, $options: 'i' } },
+        { description: { $regex: searchQuery, $options: 'i' } }
+      ]
     };
 
-    // Find categories where isDeleted is false
-    const categoryData = await Category.find(query)
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit);
-
-    // Count only categories where isDeleted is false
-    const totalCategories = await Category.countDocuments(query);
+    const totalCategories = await Category.countDocuments(filter);
     const totalPages = Math.ceil(totalCategories / limit);
 
-    res.render("category", {
-      cat: categoryData,
-      currentPage: validPage,
-      totalPages: totalPages,
-      totalCategories: totalCategories,
-      search:search
+    const categories = await Category.find(filter)
+      .sort({ createdAt: -1 }) // latest first
+      .skip((page - 1) * limit)
+      .limit(limit);
+
+    res.render('category', {
+      categories,
+      currentPage: page,
+      totalPages,
+      search: searchQuery
     });
 
   } catch (error) {
-    console.error(error);
-    res.redirect('/pageerror');
+    console.error('Error in categoryInfo:', error);
+    res.status(500).send('Internal Server Error');
+  }
+};
+
+const getAddCategory = async (req, res) => {
+  res.render('category-form', {
+    isEdit: false,
+    category: {},
+    oldInput: {},
+    errors: {}
+  });
+};
+
+// Add new category
+const addCategory = async (req, res) => {
+  let { name, description } = req.body;
+  const errors = {};
+
+  // Trim inputs
+  name = name?.trim();
+  description = description?.trim();
+
+  // Validation
+  if (!name) errors.name = "Category name is required";
+  if (!description) errors.description = "Description is required";
+
+  if (Object.keys(errors).length > 0) {
+    return res.render('category-form', {
+      isEdit: false,
+      category: {},
+      oldInput: req.body,
+      errors
+    });
+  }
+
+  try {
+    // Case-insensitive check using collation
+    const existingCategory = await Category.findOne({ name: name })
+      .collation({ locale: 'en', strength: 2 });
+
+    if (existingCategory) {
+      errors.name = "Category name already exists (case-insensitive), please choose a different name";
+      return res.render('category-form', {
+        isEdit: false,
+        category: {},
+        oldInput: req.body,
+        errors
+      });
+    }
+
+    // Capitalize first letter before saving
+    const formattedName = name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
+
+    const newCategory = new Category({ name: formattedName, description });
+    await newCategory.save();
+
+    res.redirect('/admin/category');
+
+  } catch (err) {
+    if (err.code === 11000 && err.keyPattern?.name) {
+      errors.name = "Category name already exists, please choose a different name";
+      return res.render('category-form', {
+        isEdit: false,
+        category: {},
+        oldInput: req.body,
+        errors
+      });
+    }
+    console.error(err);
+    res.status(500).send("Server error");
   }
 };
 
 
- const addCategory=async(req,res)=>{
-    const {name,description}=req.body
-    try{
-      //  console.log("POST /admin/addCategory hit"); 
-        console.log("Received category data:", name, description);
-        const existingCategory= await Category.findOne({name});
-        if(existingCategory){
-            return res.status(400).json({error:"Category already exists"})
-        }
-        const newCategory=new Category({name,description})
-        await newCategory.save()
-       return res.json({message:"Category added successfully"})
 
-    }
-    catch(error){
-        return res.status(500).json({error:"Internal server error"})
+// Get category data for edit
+const getEditCategory = async (req, res) => {
+  try {
+    const category = await Category.findById(req.params.id);
+    console.log(category)
+    console.log('Category ID:', req.params.id);
+    if (!category) return res.status(404).send("Category not found");
 
-
-    }
-}
-
-const getEditCategory=async(req,res)=>{
-  try{
-    const id=req.query.id;
-    const category=await Category.findOne({_id:id})
-    res.render('edit-category',{category:category})
-
+    res.render('category-form', {
+      isEdit: true,
+      category,
+      oldInput: {},
+      errors: {}
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Server error");
   }
-  catch(error){
-    res.redirect('/pageerror')
+};
 
+// Update category
+const editCategory = async (req, res) => {
+   const { name, description } = req.body;
+  const errors = {};
+
+  if (!name || name.trim() === '') errors.name = "Category name is required";
+  if (!description || description.trim() === '') errors.description = "Description is required";
+
+  if (Object.keys(errors).length > 0) {
+    return res.render('category-form', {
+      isEdit: true,
+      category: { _id: req.params.id }, // keep id to build form action
+      oldInput: req.body,
+      errors
+    });
   }
-}
 
-const editCategory=async(req,res)=>{
-  try{
-    const id=req.params.id;
-    const {categoryName,description}=req.body
-    const existingCategory=await Category.findOne({name:categoryName})
-    if(existingCategory){
-      return res.status(400).json({error:'Category exists,please choose another name'})
-}
-   const updateCategory=await Category.findByIdAndUpdate(id,{name:categoryName,description:description},{new:true})
-   //Without new: true, you get the original document before the update
-    if(updateCategory)
-      {
-        res.redirect('/admin/category')
-      }else
-       res.status(404).json({error:'Category not found'})
+  try {
+    const category = await Category.findById(req.params.id);
+    if (!category) return res.status(404).send("Category not found");
 
-    
+    category.name = name;
+    category.description = description;
+    await category.save();
+
+    res.redirect('/admin/category'); // Adjust redirect as needed
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Server error");
   }
-  catch(error){ 
-     res.status(500).json({error:'Internal server error'})
+};
 
-  }
-}
+// Soft delete category
 const softDeleteCategory = async (req, res) => {
   try {
-    const id = req.params.id;
-    const category = await Category.findByIdAndUpdate(id, { isDeleted: true }, { new: true });
-    if (category) {
-      res.redirect('/admin/category'); // redirect back to category page
-    } else {
-      res.status(404).send('Category not found');
-    }
+    const categoryId = req.params.id;
+    await Category.findByIdAndUpdate(categoryId, { isDeleted: true });
+    res.redirect('/admin/category');
   } catch (error) {
-    res.status(500).send('Internal server error');
+    console.error('Error in softDeleteCategory:', error);
+    res.status(500).send('Internal Server Error');
   }
 };
 
 
 
-module.exports={categoryInfo,addCategory,getEditCategory,editCategory,softDeleteCategory}
+// Mark category as listed (visible)
+const listCategory = async (req, res) => {
+  try {
+    const categoryId = req.params.id;
+    await Category.findByIdAndUpdate(categoryId, { isListed: true });
+    res.redirect('/admin/category');
+  } catch (error) {
+    console.error('Error listing category:', error);
+    res.status(500).send('Internal Server Error');
+  }
+};
+
+
+// Mark category as unlisted (hidden)
+const unlistCategory = async (req, res) => {
+  try {
+    const categoryId = req.params.id;
+    await Category.findByIdAndUpdate(categoryId, { isListed: false });
+    res.redirect('/admin/category');
+  } catch (error) {
+    console.error('Error unlisting category:', error);
+    res.status(500).send('Internal Server Error');
+  }
+};
+
+
+// Block a category
+const blockCategory = async (req, res) => {
+  try {
+    const categoryId = req.params.id;
+    await Category.findByIdAndUpdate(categoryId, { isBlocked: true });
+    res.redirect('/admin/category');
+  } catch (error) {
+    console.error('Error blocking category:', error);
+    res.status(500).send('Internal Server Error');
+  }
+};
+
+
+// Unblock a category
+const unblockCategory = async (req, res) => {
+  try {
+    const categoryId = req.params.id;
+    await Category.findByIdAndUpdate(categoryId, { isBlocked: false });
+    res.redirect('/admin/category');
+  } catch (error) {
+    console.error('Error unblocking category:', error);
+    res.status(500).send('Internal Server Error');
+  }
+};
+
+
+
+module.exports={categoryInfo,getAddCategory,addCategory,getEditCategory,editCategory,softDeleteCategory,listCategory,unlistCategory,blockCategory,unblockCategory}

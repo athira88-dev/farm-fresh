@@ -109,15 +109,32 @@
     color: red;
   }
 
-  .add-to-cart-btn {
-    background-color: #3bcf0d;
-    color: white;
-    padding: 12px 20px;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 16px;
-  }
+/* Make quantity input and button same height */
+#quantity {
+  height: 42px;              /* Adjust height as needed */
+  font-size: 16px;
+  padding: 0 12px;
+  border-radius: 6px 0 0 6px; /* Rounded corners on left side */
+  border: 1px solid #ccc;
+  border-right: none;        /* Remove right border to join with button */
+  outline: none;
+  box-sizing: border-box;
+  vertical-align: middle;
+}
+
+.add-to-cart-btn {
+  height: 42px;              /* Same height as input */
+  font-size: 16px;
+  padding: 0 20px;
+  border-radius: 0 6px 6px 0; /* Rounded corners on right side */
+  border: 1px solid #3bcf0d;
+  border-left: none;         /* Remove left border to join with input */
+  background-color: #3bcf0d;
+  color: white;
+  cursor: pointer;
+  vertical-align: middle;
+}
+
 
   .add-to-cart-btn:disabled {
     background-color: #999;
@@ -203,16 +220,15 @@
       </div>
 
       <!-- Price & Discount -->
-      <div class="price-section">
-        <span class="discounted-price">£<%= product.price.toFixed(2) %></span>
-        
-        <% if (product.discount && product.discount > 0) { 
-          const originalPrice = (product.price * 100) / (100 - product.discount); 
-        %>
-          <span class="original-price">£<%= originalPrice.toFixed(2) %></span>
-          <span class="discount-badge"><%= product.discount %>% OFF</span>
-        <% } %>
-      </div>
+    <div class="price-section">
+  <span class="discounted-price">£<%= product.finalPrice %></span>
+
+  <% if (product.appliedDiscount > 0) { %>
+    <span class="original-price">£<%= product.originalPrice.toFixed(2) %></span>
+    <span class="discount-badge"><%= product.appliedDiscount %>% OFF</span>
+    <small class="text-muted">(<%= product.discountSource %>)</small>
+  <% } %>
+</div>
 
       <!-- Coupon info -->
       <% if(product.coupon) { %>
@@ -233,13 +249,30 @@
       </div>
 
       <!-- Add to Cart -->
-      <button 
-        class="add-to-cart-btn" 
-        <%= product.stock === 0 ? 'disabled' : '' %>
-        onclick="addToCart('<%= product._id %>')"
-      >
-        Add to Cart
-      </button>
+       <% if (product.isBlocked || (product.category && product.category.isBlocked) || !product.isListed) { %>
+  <p style="color: red; font-weight: bold;">This product is not available.</p>
+<% } else if (product.stock <= 0) { %>
+  <button class="add-to-cart-btn" disabled>Add to Cart</button>
+<% } else { %>
+
+
+<form action="/add-to-cart" method="POST">
+  <input type="hidden" name="productId" value="<%= product._id %>" />
+  <label for="quantity">Quantity:</label>
+  <input type="number" id="quantity" name="quantity" value="1" min="1" max="<%= product.stock %>" />
+  <button type="submit" class="add-to-cart-btn">Add to Cart</button>
+</form>
+
+  <!-- Wishlist Button -->
+  <form action="/add-to-wishlist" method="POST" class="wishlist-form" style="margin-top: 10px;">
+    <input type="hidden" name="productId" value="<%= product._id %>">
+    <button type="submit" class="wishlist-btn" title="Add to wishlist" style="background: none; border: none; font-size: 24px; cursor: pointer;">❤️</button>
+  </form>
+
+
+<% } %>
+
+
 
       <!-- Description -->
       <div class="description" style="margin-top: 20px;">

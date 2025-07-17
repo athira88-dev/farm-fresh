@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Your Wishlist</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f9f9f9;
+      padding-top: 190px; /* Adjust based on your header height */
+    }
+    .wishlist-container {
+      max-width: 700px;
+      margin: auto;
+      background: white;
+      padding: 50px;
+      border-radius: 5px;
+      box-shadow: 0 0 8px rgba(0,0,0,0.1);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+    th, td {
+      padding: 12px 15px;
+      border: 1px solid #ddd;
+      text-align: left;
+      vertical-align: middle;
+    }
+    th {
+      background-color: #f2f2f2;
+    }
+    .empty-wishlist {
+      text-align: center;
+      font-style: italic;
+      color: #555;
+      margin-top: 30px;
+    }
+    a.button {
+      display: inline-block;
+      background-color: #3bcf0d;
+      color: white;
+      padding: 10px 15px;
+      border-radius: 3px;
+      text-decoration: none;
+      margin-top: 20px;
+    }
+    a.button:hover {
+      background-color: #218838;
+    }
+    form.remove-form button {
+      background-color: #ffac4d;
+      color: white;
+      border: none;
+      padding: 5px 10px;
+      border-radius: 3px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    form.remove-form button:hover {
+      background-color: #cc0000;
+    }
+
+    form.add-to-cart-form button {
+  background-color: #3bcf0d;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+form.add-to-cart-form button:hover {
+  background-color: #218838;
+}
+
+  </style>
+</head>
+<body>
+  <%- include('../../views/partials/user/header') %>
+
+  <div class="wishlist-container">
+    <h2>Your Wishlist</h2>
+
+    <% if (!wishlistItems || wishlistItems.length === 0) { %>
+      <p class="empty-wishlist">Your wishlist is empty.</p>
+    <% } else { %>
+      <table>
+        <thead>
+          <tr>
+            <th>Product Name</th>
+            <th>Price</th>
+            <th>Action</th> <!-- For Remove -->
+          </tr>
+        </thead>
+        <tbody>
+         <% wishlistItems.forEach(item => { %>
+  <% if (item.productId) { %>
+    <tr>
+      <td>
+        <a href="/product-details?id=<%= item.productId._id %>">
+          <%= item.productId.productName %>
+        </a>
+      </td>
+      <td>£<%= item.productId.price.toFixed(2) %></td>
+      <td>
+        <form class="add-to-cart-form" action="/add-to-cart" method="POST" style="display: inline-block; margin-right: 8px;">
+          <input type="hidden" name="productId" value="<%= item.productId._id %>">
+          <button type="submit">Add to Cart</button>
+        </form>
+
+        <form class="remove-form" action="/wishlist/remove" method="POST" style="display: inline-block;">
+          <input type="hidden" name="productId" value="<%= item.productId._id %>">
+          <button type="submit">Remove</button>
+        </form>
+      </td>
+    </tr>
+  <% } %>
+<% }); %>
+
+        </tbody>
+      </table>
+
+      <a href="/products" class="button">Continue Shopping</a>
+    <% } %>
+  </div>
+
+  <%- include('../../views/partials/user/footer') %>
+</body>
+</html>

@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Your Cart</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f9f9f9;
+      padding-top: 190px; /* Adjust based on your header height */
+    }
+    .cart-container {
+      max-width: 700px;
+      margin: auto;
+      background: white;
+      padding: 50px;
+      border-radius: 5px;
+      box-shadow: 0 0 8px rgba(0,0,0,0.1);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+    th, td {
+      padding: 12px 15px;
+      border: 1px solid #ddd;
+      text-align: left;
+      vertical-align: middle;
+    }
+    th {
+      background-color: #f2f2f2;
+    }
+    .total-row td {
+      font-weight: bold;
+      font-size: 1.1em;
+    }
+    .empty-cart {
+      text-align: center;
+      font-style: italic;
+      color: #555;
+      margin-top: 30px;
+    }
+    a.button {
+      display: inline-block;
+      background-color: #3bcf0d;
+      color: white;
+      padding: 10px 15px;
+      border-radius: 3px;
+      text-decoration: none;
+      margin-top: 20px;
+    }
+    a.button:hover {
+      background-color: #218838;
+    }
+    form.quantity-form {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    button.qty-btn {
+      padding: 4px 10px;
+      font-size: 16px;
+      cursor: pointer;
+      background-color: #3bcf0d;
+      border: none;
+      color: white;
+      border-radius: 3px;
+      user-select: none;
+    }
+    button.qty-btn:disabled {
+      background-color: #a5d6a7;
+      cursor: not-allowed;
+    }
+    span.qty-display {
+      min-width: 25px;
+      text-align: center;
+      display: inline-block;
+    }
+    form.remove-form button {
+      background-color: #ffac4d;
+      color: white;
+      border: none;
+      padding: 5px 10px;
+      border-radius: 3px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    form.remove-form button:hover {
+      background-color: #cc0000;
+    }
+  </style>
+</head>
+<body>
+  <%- include('../../views/partials/user/header') %>
+
+  <div class="cart-container">
+    <h2>Your Cart</h2>
+
+    <% if (!cart || cart.items.length === 0) { %>
+      <p class="empty-cart">Your cart is empty.</p>
+    <% } else { %>
+      <table>
+  <thead>
+    <tr>
+      <th>Product Name</th>
+      <th>Quantity</th>
+      <th>Price (per unit)</th>
+      <th>Discount</th>
+      <th>Total Price</th>
+      <th>Action</th>
+    </tr>
+  </thead>
+
+  <tbody>
+    <% cart.items.forEach(item => { %>
+      <tr>
+        <td><%= item.productId.productName %></td>
+
+        <td>
+          <form class="quantity-form" action="/cart/update-quantity" method="POST">
+            <input type="hidden" name="productId" value="<%= item.productId._id %>">
+
+            <button
+              type="submit"
+              name="quantity"
+              value="<%= item.quantity - 1 %>"
+              class="qty-btn"
+              <%= item.quantity <= 1 ? 'disabled' : '' %> >
+              -
+            </button>
+
+            <span class="qty-display"><%= item.quantity %></span>
+
+            <button
+              type="submit"
+              name="quantity"
+              value="<%= item.quantity + 1 %>"
+              class="qty-btn"
+              <%= (item.quantity >= item.productId.stock || item.quantity >= item.productId.maxQuantity) ? 'disabled' : '' %> >
+              +
+            </button>
+          </form>
+ <!-- Show final price -->
+<td>£<%= item.productId.finalPrice %></td>
+
+<!-- Show discount and source -->
+<td>
+  <% if (item.productId.appliedDiscount > 0) { %>
+    <!-- <span class="original-price">£<%= item.productId.originalPrice.toFixed(2) %></span> -->
+    <span class="discount-badge"><%= item.productId.appliedDiscount %>% OFF</span>
+    <small class="text-muted">(<%= item.productId.discountSource %>)</small>
+  <% } else { %>
+    No Discount
+  <% } %>
+</td>
+
+        <!-- Total price for this item -->
+        <td>£<%= item.totalPrice.toFixed(2) %></td>
+
+        <td>
+          <form class="remove-form" action="/cart/remove" method="POST">
+            <input type="hidden" name="productId" value="<%= item.productId._id %>">
+            <button type="submit">Remove</button>
+          </form>
+        </td>
+      </tr>
+    <% }); %>
+
+    <tr class="total-row">
+      <td colspan="4" style="text-align:right;">Grand Total:</td>
+      <td>£<%= cart.items.reduce((sum, item) => sum + item.totalPrice, 0).toFixed(2) %></td>
+      <td></td>
+    </tr>
+  </tbody>
+</table>
+
+<% if (errorMessage) { %>
+  <div style="color: red; font-weight: bold; margin-bottom: 15px;"><%= errorMessage %></div>
+<% } %>
+
+
+<a href="<%= cartHasStockIssues ? '#' : '/checkout' %>" class="button" 
+   style=<%= cartHasStockIssues ? 'pointer-events: none; opacity: 0.6;' : '' %>>
+  Proceed to Checkout
+</a>
+
+    <% } %>
+  </div>
+
+  <%- include('../../views/partials/user/footer') %>
+</body>
+</html>

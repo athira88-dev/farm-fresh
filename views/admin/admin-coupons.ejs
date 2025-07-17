@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Admin - Manage Coupons</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+</head>
+<body class="container py-4">
+
+  <h2 class="text-center mb-4">Coupon Management</h2>
+
+  <!-- Coupon Creation Form -->
+  <div class="card mb-5">
+    <div class="card-header">Create New Coupon</div>
+    <div class="card-body">
+      <form id="createCouponForm">
+        <div class="row mb-3">
+          <div class="col">
+            <label for="name" class="form-label">Coupon Code</label>
+            <input type="text" class="form-control" id="name" name="name" required />
+          </div>
+          <div class="col">
+            <label for="expiredOn" class="form-label">Expiry Date</label>
+            <input type="date" class="form-control" id="expiredOn" name="expiredOn" required />
+          </div>
+        </div>
+        <div class="row mb-3">
+          <div class="col">
+            <label for="offerPrice" class="form-label">Offer Price (£)</label>
+            <input type="number" class="form-control" id="offerPrice" name="offerPrice" required min="1" />
+          </div>
+          <div class="col">
+            <label for="minimumPrice" class="form-label">Minimum Spend (£)</label>
+            <input type="number" class="form-control" id="minimumPrice" name="minimumPrice" required min="1" />
+          </div>
+        </div>
+        <div class="form-check mb-3">
+          <input class="form-check-input" type="checkbox" name="isList" id="isList" checked>
+          <label class="form-check-label" for="isList">Active/Listed</label>
+        </div>
+        <button type="submit" class="btn btn-success">Create Coupon</button>
+        <div id="formMessage" class="mt-2"></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Coupon List Table -->
+  <h4>Existing Coupons</h4>
+  <table class="table table-bordered table-striped">
+    <thead>
+      <tr>
+        <th>Coupon Code</th>
+        <th>Offer Price</th>
+        <th>Minimum Spend</th>
+        <th>Expiry Date</th>
+        <th>Listed</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% if (coupons.length === 0) { %>
+        <tr><td colspan="6" class="text-center">No coupons available</td></tr>
+      <% } else { %>
+        <% coupons.forEach(coupon => { %>
+          <tr>
+            <td><%= coupon.name %></td>
+            <td>£<%= coupon.offerPrice %></td>
+            <td>£<%= coupon.minimumPrice %></td>
+            <td><%= coupon.expiredOn.toDateString() %></td>
+            <td><%= coupon.isList ? "Yes" : "No" %></td>
+            <td>
+              <button class="btn btn-danger btn-sm" onclick="deleteCoupon('<%= coupon._id %>')">Delete</button>
+            </td>
+          </tr>
+        <% }) %>
+      <% } %>
+    </tbody>
+  </table>
+
+  <!-- JS for Create and Delete -->
+  <script>
+    const form = document.getElementById('createCouponForm');
+    const messageBox = document.getElementById('formMessage');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      messageBox.innerHTML = '';
+
+      const formData = {
+        name: form.name.value,
+        expiredOn: form.expiredOn.value,
+        offerPrice: form.offerPrice.value,
+        minimumPrice: form.minimumPrice.value,
+        isList: form.isList.checked
+      };
+
+      try {
+        const res = await fetch('/admin/coupons', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formData)
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+          messageBox.innerHTML = `<div class="text-success">${data.message}</div>`;
+          setTimeout(() => location.reload(), 1000);
+        } else {
+          messageBox.innerHTML = `<div class="text-danger">${data.error || 'Error occurred'}</div>`;
+        }
+      } catch (err) {
+        messageBox.innerHTML = `<div class="text-danger">Failed to create coupon</div>`;
+        console.error(err);
+      }
+    });
+
+ async function deleteCoupon(couponId) {
+  const result = await Swal.fire({
+    title: 'Are you sure?',
+    text: "You won't be able to revert this!",
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#d33',
+    cancelButtonColor: '#3085d6',
+    confirmButtonText: 'Yes, delete it!',
+  });
+
+  if (!result.isConfirmed) return;
+
+  try {
+    const res = await fetch(`/admin/coupons/${couponId}`, {
+      method: 'DELETE',
+    });
+
+    const data = await res.json();
+
+    if (res.ok) {
+      await Swal.fire('Deleted!', data.message, 'success');
+      location.reload();
+    } else {
+      Swal.fire('Error!', data.error || 'Error deleting coupon', 'error');
+    }
+  } catch (err) {
+    Swal.fire('Failed!', 'Failed to delete coupon', 'error');
+    console.error(err);
+  }
+}
+
+  </script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</body>
+</html>

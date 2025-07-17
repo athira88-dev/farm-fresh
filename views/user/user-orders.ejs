@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<%- include("../../views/partials/user/header") %> 
+  <style>
+    body {
+  padding-top: 120px; /* or height of your header */
+}
+  </style>
+
+  <body>
+    <div class="container mt-5">
+      <h2>Your Orders</h2>
+     <form action="/orders/search" method="GET" class="mb-4" style="display: flex; gap: 8px; align-items: center;">
+  <input type="text" name="query" placeholder="Search Order ID..." required />
+  <button type="submit">Search</button>
+  <!-- <a href="/orders" class="btn-clear" style="display: flex; gap: 8px; align-items: center;">Clear</a> -->
+</form>
+
+      <% if (!orders || orders.length === 0) { %>
+        <p>You have no orders placed yet.</p>
+        <a href="/" class="btn btn-primary">Shop Now</a>
+      <% } else { %>
+        <table class="table table-bordered table-striped">
+          <thead class="table-light">
+            <tr>
+              <th>Order ID</th>
+              <th>Total Amount</th>
+              <th>Status</th>
+              <th>Date</th>
+              <th>Details</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+       <tbody>
+  <% orders.forEach(order => { %>
+    <tr>
+      <td><%= order.orderId %></td>
+      
+     <td>£<%= order.display.grandTotal %></td>
+
+
+      <td>  <% if (order.returnStatus === 'Return Requested') { %>
+    <span class="text-warning">Return Requested</span>
+  <% } else if (order.returnStatus === 'Returned') { %>
+    <span class="text-success">Returned</span>
+  <% } else { %>
+    <%= order.status %>
+  <% } %></td>
+      <td><%= order.createdOn.toDateString() %></td>
+      <td>
+        <!-- <a href="/orders/<%= order.orderId %>" class="btn btn-sm btn-info">View</a> -->
+       <% if(order.status !== 'Cancelled') { %>
+  <a href="/orders/<%= order._id %>" class="btn btn-primary">View Order Details</a>
+<% } else { %>
+  <button class="btn btn-secondary" disabled>Order Cancelled</button>
+<% } %>
+
+      </td>
+      <td>
+        <% if (order.status === 'Pending' || order.status === 'Processing' ||order.status === 'Paid' ) { %>
+          <form id="cancel-form-<%= order._id %>" action="/orders/<%= order._id %>/cancel" method="POST">
+  <button type="button" class="btn btn-sm btn-danger" onclick="confirmCancel('<%= order._id %>')">
+    Cancel Order
+  </button>
+</form>
+
+        <% } else { %>
+          <span class="text-muted">Not cancellable</span>
+        <% } %>
+      </td>
+    </tr>
+  <% }) %>
+</tbody>
+
+        </table>
+      <% } %>
+      
+      <a href="/user-profile" class="btn btn-secondary mt-3">Back to Profile</a>
+    </div>
+
+<nav aria-label="Page navigation example">
+      <ul class="pagination justify-content-center" style="display: flex !important;">
+
+    <% if (currentPage > 1) { %>
+      <li class="page-item">
+        <a class="page-link" href="?page=<%= currentPage - 1 %>">Previous</a>
+      </li>
+    <% } else { %>
+      <li class="page-item disabled">
+        <span class="page-link">Previous</span>
+      </li>
+    <% } %>
+
+    <% for(let i = 1; i <= totalPages; i++) { %>
+      <li class="page-item <%= currentPage === i ? 'active' : '' %>">
+        <a class="page-link" href="?page=<%= i %>"><%= i %></a>
+      </li>
+    <% } %>
+
+    <% if (currentPage < totalPages) { %>
+      <li class="page-item">
+        <a class="page-link" href="?page=<%= currentPage + 1 %>">Next</a>
+      </li>
+    <% } else { %>
+      <li class="page-item disabled">
+        <span class="page-link">Next</span>
+      </li>
+    <% } %>
+
+  </ul>
+</nav>
+
+
+
+  <%- include("../../views/partials/user/footer") %>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script>
+  function confirmCancel(orderId) {
+    Swal.fire({
+      title: 'Cancel Order?',
+      text: "Are you sure you want to cancel this order?",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#6c757d',
+      confirmButtonText: 'Yes, cancel it!',
+      cancelButtonText: 'No'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        document.getElementById(`cancel-form-${orderId}`).submit();
+      }
+    });
+  }
+</script>
+
+  
+  </body>
+</html>

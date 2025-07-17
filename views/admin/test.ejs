@@ -1,0 +1,412 @@
+<%- include("../../views/partials/admin/header") %>
+
+    <head>
+        <style>
+  .error-message {
+    color: red;
+    font-size: 0.875rem;
+    margin-top: 4px;
+    display: none;  /* Hide by default */
+  }
+  .input-error {
+    border-color: red !important;
+  }
+</style>
+
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@10/dist/sweetalert2.min.css" />
+        <style>
+            .col-md-3 {
+                padding: 20px;
+                border: 1px solid #ddd;
+                border-radius: 10px;
+                margin: 10px 0;
+                /* Vertical margin only */
+            }
+
+            .form-label {
+                margin-bottom: 8px;
+            }
+
+            .form-control {
+                width: 100%;
+                padding: 8px;
+                margin-bottom: 10px;
+                border: 1px solid #ccc;
+                border-radius: 5px;
+                box-sizing: border-box;
+            }
+
+            .d-grid {
+                margin-top: 20px;
+            }
+
+            .btn-primary {
+                background-color: #007bff;
+                color: #fff;
+                border: 1px solid #007bff;
+                border-radius: 5px;
+                padding: 10px 20px;
+                cursor: pointer;
+            }
+
+            .btn-primary:hover {
+                background-color: #0056b3;
+                border-color: #0056b3;
+            }
+
+            .pagination-container {
+                text-align: center;
+                margin-top: 20px;
+            }
+
+            .pagination {
+                display: inline-block;
+            }
+
+            .pagination a,
+            .pagination .current-page {
+                display: inline-block;
+                padding: 5px 10px;
+                margin: 0 2px;
+                border: 1px solid #ddd;
+                text-decoration: none;
+                color: #333;
+            }
+
+            .pagination a:hover {
+                background-color: #f5f5f5;
+            }
+
+            .error-message {
+                color: red;
+                display: none;
+            }
+        </style>
+    </head>
+
+    <body>
+        <section class="content-main">
+            <div class="content-header">
+                <div>
+                    <h2 class="content-title card-title">Category</h2>
+                </div>
+            </div>
+            <header class="card-header text-center mb-4">
+                <form action="/admin/category/" method="get" class="d-inline">
+                    <div class="input-group input-group-sm border border-1 border-grey rounded-pill mx-auto"
+                        style="max-width: 500px;">
+                        <input type="text" class="form-control border-0" placeholder="Search categories..."
+                            name="search" value="<%= search || '' %>"
+                            style="border-top-left-radius: 9999px; border-bottom-left-radius: 9999px; border-top-right-radius: 0; border-bottom-right-radius: 0;" />
+                        <button class="btn btn-primary" type="submit" style="border-radius: 0; border-right: none;">
+                            Search
+                        </button>
+                        <a href="/admin/category/" class="btn btn-secondary"
+                            style="border-top-right-radius: 9999px; border-bottom-right-radius: 9999px; border-left: none;">
+                            Clear
+                        </a>
+                    </div>
+                </form>
+            </header>
+
+            <div class="card">
+                <div class="card-body">
+                    <div class="row">
+                        <!-- Left form -->
+                        <div class="col-md-3">
+                            <form method="post" action="/admin/addCategory" onsubmit="return handleFormSubmit(event)">
+                                <div class="mb-4">
+                                    <label for="product_name" class="form-label">Name</label>
+                                    <input type="text" name="name" placeholder="Type here" class="form-control"
+                                        id="product_name" required />
+                                    <div id="name-error" class="error-message"></div>
+                                </div>
+                                <div class="mb-4">
+                                    <label class="form-label">Description</label>
+                                    <textarea placeholder="Type here" name="description" class="form-control"
+                                        id="descriptionId" required></textarea>
+                                    <div id="description-error" class="error-message"></div>
+                                </div>
+                                <div class="d-grid">
+                                    <button class="btn btn-primary" type="submit">Create category</button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- Right table -->
+                        <div class="col-md-9">
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle">
+                                    <thead>
+                                        <tr>
+                                            <th class="text-center"></th>
+                                            <th>Name</th>
+                                            <th>Description</th>
+                                            <th>Offer Price</th>
+                                            <th>Offer</th>
+                                            <th>Status</th>
+                                            <th>List/Unlist</th>
+                                            <th>Block/Unblock</th>
+                                            <th class="text-start">Edit</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <% cat.forEach(category=> { %>
+                                            <tr>
+                                                <td></td>
+                                                <td class="text-start">
+                                                    <%= category.name %>
+                                                </td>
+                                                <td class="text-start">
+                                                    <%= category.description %>
+                                                </td>
+                                                <td></td>
+                                                <td class="text-start">
+                                                    <button class="btn btn-info" style="width: 100px">
+                                                        <a href="#" class="text-white">Add Offer</a>
+                                                    </button>
+                                                    <button class="btn btn-info" style="width: 100px">
+                                                        <a href="#" class="text-white">Remove</a>
+                                                    </button>
+                                                </td>
+
+                                                <!-- Status -->
+                                                <td class="text-start">
+                                                    <% if (category.isListed) { %>
+                                                        <span class="badge rounded-pill alert-success"
+                                                            style="width: 60px">Listed</span>
+                                                        <% } else { %>
+                                                            <span class="badge rounded-pill alert-danger"
+                                                                style="width: 60px">Unlisted</span>
+                                                            <% } %>
+                                                                <% if (category.isBlocked) { %>
+                                                                    <span class="badge rounded-pill alert-danger ms-2"
+                                                                        style="width: 70px">Blocked</span>
+                                                                    <% } else { %>
+                                                                        <span
+                                                                            class="badge rounded-pill alert-success ms-2"
+                                                                            style="width: 70px">Active</span>
+                                                                        <% } %>
+                                                </td>
+
+                                                <!-- List/Unlist -->
+                                                <td class="text-start">
+                                                    <% if (category.isListed) { %>
+                                                        <button class="btn btn-danger list-toggle-btn"
+                                                            data-id="<%= category._id %>" data-action="unlist"
+                                                            style="width: 70px">Unlist</button>
+                                                        <% } else { %>
+                                                            <button class="btn btn-success list-toggle-btn"
+                                                                data-id="<%= category._id %>" data-action="list"
+                                                                style="width: 70px">List</button>
+                                                            <% } %>
+                                                </td>
+
+                                                <!-- Block/Unblock -->
+                                                <td class="text-start">
+                                                    <% if (category.isBlocked) { %>
+                                                        <button class="btn btn-success block-toggle-btn"
+                                                            data-id="<%= category._id %>" data-action="unblock"
+                                                            style="width: 90px">Unblock</button>
+                                                        <% } else { %>
+                                                            <button class="btn btn-danger block-toggle-btn"
+                                                                data-id="<%= category._id %>" data-action="block"
+                                                                style="width: 90px">Block</button>
+                                                            <% } %>
+                                                </td>
+
+
+                                                <!-- Edit and Delete -->
+                                                <td class="text-start">
+                                                    <a href="/admin/editCategory?id=<%= category._id %>"
+                                                        class="btn btn-info text-white">Edit</a>
+                                                    <form action="/admin/category/delete/<%= category._id %>"
+                                                        method="POST" style="display:inline;"
+                                                        onsubmit="return confirm('Are you sure you want to delete this category?');">
+                                                        <button type="submit" class="btn btn-danger">Delete</button>
+                                                    </form>
+                                                </td>
+                                            </tr>
+                                            <% }) %>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pagination-container">
+                <% if (currentPage> 1) { %>
+                    <a href="?page=<%= currentPage - 1 %>">&laquo; Previous</a>
+                    <% } %>
+                        <% for (let i=1; i <=totalPages; i++) { %>
+                            <% if (i===currentPage) { %>
+                                <span class="current-page">
+                                    <%= i %>
+                                </span>
+                                <% } else { %>
+                                    <a href="?page=<%= i %>">
+                                        <%= i %>
+                                    </a>
+                                    <% } %>
+                                        <% } %>
+                                            <% if (currentPage < totalPages) { %>
+                                                <a href="?page=<%= currentPage + 1 %>">Next &raquo;</a>
+                                                <% } else { %>
+                                                    <span class="disabled">Next &raquo;</span>
+                                                    <% } %>
+            </div>
+        </section>
+
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@10/dist/sweetalert2.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+
+        <script>
+            function handleFormSubmit(event) {
+  event.preventDefault();
+
+  if (!validateForm()) {
+    return false;
+  }
+
+  const name = document.getElementsByName('name')[0].value;
+  const description = document.getElementById('descriptionId').value;
+
+  fetch('/admin/addCategory', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, description })
+  })
+  .then(response => {
+    if (!response.ok) {
+      return response.json().then(err => { throw new Error(err.error); });
+    }
+    return response.json();
+  })
+  .then(data => {
+    location.reload();
+  })
+  .catch(error => {
+    if (error.message === 'Category exists,please choose another name' || error.message === 'Category already exists') {
+      displayErrorMessage('name-error', 'Category already exists. Please choose another name.');
+      const nameInput = document.getElementsByName('name')[0];
+      nameInput.classList.add('input-error');
+    } else {
+      displayErrorMessage('name-error', 'An error occurred while adding the category.');
+    }
+  });
+
+  return false;
+}
+
+  
+
+  
+  
+
+function validateForm() {
+  clearErrorMessages();
+
+  const nameInput = document.getElementsByName('name')[0];
+  const descriptionInput = document.getElementById('descriptionId');
+
+  let isValid = true;
+  const name = nameInput.value.trim();
+  const description = descriptionInput.value.trim();
+
+  if (name === "") {
+    displayErrorMessage('name-error', 'Please enter a name');
+    nameInput.classList.add('input-error');
+    isValid = false;
+  } else if (!/^[a-zA-Z\s]+$/.test(name)) {
+    displayErrorMessage('name-error', 'Category name should contain only alphabetic characters');
+    nameInput.classList.add('input-error');
+    isValid = false;
+  } else {
+    nameInput.classList.remove('input-error');
+  }
+
+  if (description === "") {
+    displayErrorMessage('description-error', 'Please enter a description');
+    descriptionInput.classList.add('input-error');
+    isValid = false;
+  } else {
+    descriptionInput.classList.remove('input-error');
+  }
+
+  return isValid;
+}
+
+function displayErrorMessage(elementId, message) {
+  const errorElement = document.getElementById(elementId);
+  errorElement.innerText = message;
+  errorElement.style.display = "block";
+}
+
+function clearErrorMessages() {
+  const errorElements = document.getElementsByClassName('error-message');
+  Array.from(errorElements).forEach(element => {
+    element.innerText = '';
+    element.style.display = 'none';
+  });
+
+  // Remove red borders from inputs
+  const inputs = document.querySelectorAll('input, textarea');
+  inputs.forEach(input => input.classList.remove('input-error'));
+}
+            
+        </script>
+        <script>
+  document.querySelectorAll('.list-toggle-btn').forEach(button => {
+    button.addEventListener('click', () => {
+      const categoryId = button.dataset.id;
+      const action = button.dataset.action;  // 'list' or 'unlist'
+
+      fetch(`/admin/category/${action}/${categoryId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+      .then(res => {
+        if (!res.ok) throw new Error('Failed to update category');
+        return res.json();
+      })
+      .then(data => {
+        location.reload();  // reload to show updated status
+      })
+      .catch(err => {
+        alert(err.message);
+      });
+    });
+  });
+
+  document.querySelectorAll('.block-toggle-btn').forEach(button => {
+    button.addEventListener('click', () => {
+      const categoryId = button.dataset.id;
+      const action = button.dataset.action;  // 'block' or 'unblock'
+
+      fetch(`/admin/category/${action}/${categoryId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+      .then(res => {
+        if (!res.ok) throw new Error('Failed to update category');
+        return res.json();
+      })
+      .then(data => {
+        location.reload();  // reload to show updated status
+      })
+      .catch(err => {
+        alert(err.message);
+      });
+    });
+  });
+</script>
+
+    </body>
+
+    <%- include("../../views/partials/admin/footer") %>

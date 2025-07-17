@@ -13,6 +13,14 @@
       <div class="card mx-auto" style="max-width: 600px;">
         <div class="card-body">
 
+          <% if (typeof success !== 'undefined') { %>
+  <div class="alert alert-success alert-dismissible fade show" role="alert">
+    <%= success %>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+  </div>
+<% } %>
+
+
           <h2 class="text-center mb-4">Welcome, <%= user.name %>!</h2>
 
           <!-- Profile Image -->
@@ -36,53 +44,78 @@
             <a href="/forgot-password" class="btn btn-outline-secondary">Change Password</a>
           </div>
 
-        <h4>Your Addresses</h4>
+      <h4>Your Addresses</h4>
 
 <% if (addresses && addresses.length > 0) { %>
-  <% addresses.forEach(addr => { %>
-  <div class="mb-3 border p-3 rounded">
-    <strong><%= addr.addressType %></strong><br>
+<% addresses.forEach(addr => { %>
+  <div class="mb-3 border p-3 rounded <% if (addr.isDefault) { %> border-success <% } %>">
+    <strong><%= addr.addressType %></strong>
+    <% if (addr.isDefault) { %>
+      <span class="badge bg-success ms-2">Default</span>
+    <% } %><br>
+
     <%= addr.name %><br>
     <%= addr.street %>, <%= addr.city %><br>
     <%= addr.state %> - <%= addr.postcode %>, <%= addr.country %><br>
     Phone: <%= addr.phone %> | Alt Phone: <%= addr.altPhone %>
-    <div class="mt-2">
+
+    <div class="mt-2 d-flex gap-2 flex-wrap">
       <a href="/manage-address" class="btn btn-sm btn-outline-primary">Manage Address</a>
+      <% if (!addr.isDefault) { %>
+        <form action="/set-default-address/<%= addr._id %>" method="POST" style="display: inline;">
+          <button type="submit" class="btn btn-sm btn-outline-success">Set as Default</button>
+        </form>
+      <% } %>
     </div>
   </div>
 <% }) %>
+
 
 <% } else { %>
   <p>No addresses added yet.</p>
   <a href="/add-address" class="btn btn-outline-primary me-2">Add Address</a>
 <% } %>
 
+
           <!-- Order History -->
-          <h4 class="mt-4">Your Orders</h4>
-          <% if (!orders || orders.length === 0) { %>
-            <p>No orders placed yet.</p>
-          <% } else { %>
-            <table class="table table-bordered table-striped">
-              <thead class="table-light">
-                <tr>
-                  <th>Order ID</th>
-                  <th>Total Amount</th>
-                  <th>Status</th>
-                  <th>Date</th>
-                </tr>
-              </thead>
-              <tbody>
-                <% orders.forEach(order => { %>
-                  <tr>
-                    <td><%= order._id %></td>
-                    <td>₹<%= order.totalAmount %></td>
-                    <td><%= order.status %></td>
-                    <td><%= order.createdAt.toDateString() %></td>
-                  </tr>
-                <% }) %>
-              </tbody>
-            </table>
-          <% } %>
+     
+<h4 class="mt-4">Your Orders</h4>
+<div class="mt-4 text-left">
+  <a href="/orders" class="btn btn-sm btn-outline-primary">View Orders</a>
+</div>
+
+<h4 class="mt-4">Your Wallet</h4>
+<div class="mt-4 text-left">
+  <a href="/wallet" class="btn btn-sm btn-outline-primary">View Wallet</a>
+</div>
+
+
+<h4 class="mt-4">Your ReferralCode</h4>
+<div class="mt-4 text-left">  
+  <!-- <p><strong>Your referral code:</strong> <%= user.referralCode %></p> -->
+  
+  <!-- Copy to clipboard button -->
+  <button onclick="copyReferralCode()" class="btn btn-sm btn-outline-primary">Copy</button>
+</div>
+
+
+<h4 class="mt-4">Your Coupons</h4>
+<div class="mt-2">
+  <% if (coupons.length === 0) { %>
+    <p>No active coupons available.</p>
+  <% } else { %>
+    <ul class="list-group">
+      <% coupons.forEach(coupon => { %>
+        <li class="list-group-item">
+          <strong><%= coupon.name %></strong><br>
+          Offer: £<%= coupon.offerPrice %> off<br>
+          Minimum Purchase: £<%= coupon.minimumPrice %><br>
+          Valid Until: <%= coupon.expiredOn.toDateString() %>
+        </li>
+      <% }) %>
+    </ul>
+  <% } %>
+</div>
 
          
 
@@ -91,5 +124,15 @@
     </div>
 
     <%- include('../../views/partials/user/footer') %>
+
+    <script>
+  function copyReferralCode() {
+    const code = "<%= user.referralCode %>";
+
+    navigator.clipboard.writeText(code)
+      .then(() => alert("Referral code copied!"))
+      .catch(() => alert("Failed to copy referral code."));
+  }
+</script>
   </body>
 </html>

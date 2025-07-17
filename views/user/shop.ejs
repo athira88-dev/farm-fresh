@@ -3,29 +3,29 @@
 <style>
   /* Keep your existing styles here */
   .main-container {
-  max-width: 1200px;
-  margin: 150px auto 0; /* Add top margin to prevent overlap */
-  padding: 20px;
+    max-width: 1200px;
+    margin: 150px auto 0; /* Add top margin to prevent overlap */
+    padding: 20px;
   }
   .product-list-container {
     display: flex;
     gap: 20px;
   }
   .filter-sidebar {
-  width: 20%;
-  min-width: 200px;
-  border: 1px solid #ccc;
-  padding: 15px;
-  border-radius: 8px;
-  background-color: #f9f9f9;
-  height: fit-content;
-}
-.product-grid {
-  width: 80%;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 20px;
-}
+    width: 20%;
+    min-width: 200px;
+    border: 1px solid #ccc;
+    padding: 15px;
+    border-radius: 8px;
+    background-color: #f9f9f9;
+    height: fit-content;
+  }
+  .product-grid {
+    width: 80%;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+  }
   .product-card {
     width: calc(33.333% - 20px);
     border: 1px solid #ddd;
@@ -39,26 +39,70 @@
     height: auto;
     border-radius: 5px;
   }
-  .wishlist-btn {
-    position: absolute;
-    top: 8px;
-    right: 8px;
-    background-color: rgba(237, 247, 247, 0.8);
-    color: #fff;
-    padding: 8px;
-    border-radius: 50%;
-    cursor: pointer;
+  .product-card h4 {
+    height: 40px; /* Or adjust based on your design */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin: 10px 0;
   }
+
+.wishlist-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background-color: transparent;
+  color: #f7a1a1;  /* soft pink */
+  padding: 0;
+  border-radius: 0;
+  border: none;
+  font-size: 1.6rem;
+  cursor: pointer;
+  outline: none;
+  transition: color 0.3s ease;
+}
+
+.wishlist-btn:hover {
+  color: #f16c6c; /* a bit deeper on hover */
+}
+
   .add-to-cart-btn {
     background-color: #3bcf0d;
+     white-space: nowrap;   
     color: #fff;
-    padding: 10px;
     border: none;
     border-radius: 5px;
     cursor: pointer;
-    width: 100%;
-    margin-top: 10px;
+    font-size: 14px;
+    padding: 0 15px;
+    height: 40px;
+    min-width: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
   }
+  .price-section {
+    margin: 15px 0;
+    font-size: 22px;
+  }
+
+  .original-price {
+    text-decoration: line-through;
+    color: #888;
+    margin-left: 12px;
+    font-size: 18px;
+  }
+
+  .discount-badge {
+    background-color: #e63946;
+    color: white;
+    padding: 3px 8px;
+    border-radius: 5px;
+    font-size: 14px;
+    margin-left: 10px;
+  }
+
 
   /* Filter form styling */
   form#filterForm {
@@ -83,7 +127,7 @@
     border-radius: 4px;
     cursor: pointer;
   }
-    .active-page {
+  .active-page {
     font-weight: bold;
     text-decoration: underline;
   }
@@ -97,112 +141,262 @@
     text-decoration: none;
     color: inherit;
   }
+  .product-image-container {
+    width: 100%;
+    aspect-ratio: 1 / 1; /* Makes it a square container */
+    overflow: hidden;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #fff;
+  }
+
+  .product-image-container img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* Crop images to fit the square */
+    display: block;
+  }
+
+  .add-to-cart-btn:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+    color: #666;
+  }
+
+  button[disabled] {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  /* Fix for Add to Cart button alignment */
+  .product-action form {
+    display: flex;
+    align-items: center; /* vertically centers all items */
+    gap: 8px;
+  }
+
+  .product-action form button[type="button"] {
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
+    padding: 0;
+    border-radius: 5px;
+    border: none;
+    background-color: #3bcf0d;
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+  }
+
+  .product-action form button[type="button"]:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+    color: #666;
+  }
+
+  .product-action form input[type="number"] {
+    width: 50px;
+    height: 40px;
+    text-align: center;
+    font-size: 16px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    pointer-events: none;
+    box-sizing: border-box;
+  }
 </style>
 
 <div class="main-container">
   <h2>Farm Fresh Products</h2>
 
-<div class="product-list-container">
-  <!-- Left Sidebar -->
-  <aside class="filter-sidebar">
-    <form id="filterForm" method="get" action="/shop">
-      <h3>Filters</h3>
-      <input
-        type="text"
-        name="search"
-        placeholder="Search products..."
-        value="<%= typeof searchQuery !== 'undefined' ? searchQuery : '' %>"
-      />
+  <div class="product-list-container">
+    <!-- Left Sidebar -->
+    <aside class="filter-sidebar">
+      <form id="filterForm" method="get" action="/shop">
+        <h3>Filters</h3>
+        <input
+          type="text"
+          name="search"
+          placeholder="Search products..."
+          value="<%= typeof searchQuery !== 'undefined' ? searchQuery : '' %>"
+        />
 
-      <select name="category">
-        <option value="">All Categories</option>
-        <option value="fruits" <%= category === 'fruits' ? 'selected' : '' %>>Fruits</option>
-        <option value="vegetables" <%= category === 'vegetables' ? 'selected' : '' %>>Vegetables</option>
-        <option value="dairy" <%= category === 'dairy' ? 'selected' : '' %>>Dairy</option>
-        <option value="other" <%= category === 'other' ? 'selected' : '' %>>Other</option>
-      </select>
-
-      <select name="sortBy">
-        <option value="">Sort By</option>
-        <option value="priceLow" <%= sortBy === 'priceLow' ? 'selected' : '' %>>Price: Low to High</option>
-        <option value="priceHigh" <%= sortBy === 'priceHigh' ? 'selected' : '' %>>Price: High to Low</option>
-        <option value="nameAsc" <%= sortBy === 'nameAsc' ? 'selected' : '' %>>Name: A to Z</option>
-        <option value="nameDesc" <%= sortBy === 'nameDesc' ? 'selected' : '' %>>Name: Z to A</option>
-      </select>
-
-      <input
-        type="number"
-        name="minPrice"
-        placeholder="Min Price"
-        min="0"
-        value="<%= typeof minPrice !== 'undefined' && minPrice !== 0 ? minPrice : '' %>"
-      />
-
-      <input
-        type="number"
-        name="maxPrice"
-        placeholder="Max Price"
-        min="0"
-        value="<%= typeof maxPrice !== 'undefined' && maxPrice !== Number.MAX_SAFE_INTEGER ? maxPrice : '' %>"
-      />
-
-      <button type="submit">Apply</button>
-      <button type="button" id="clearFiltersBtn">Clear</button>
-    </form>
-  </aside>
-
-  <!-- Product Grid -->
-  <main class="product-grid">
-<% if (products && products.length > 0) { %>
-  <% products.forEach(product => { 
-       const cleanFileName = product.productImage[0].split('\\').pop().split('/').pop(); 
-  %>
-    <div class="product-card">
-      <span class="wishlist-btn">❤️</span>
-         <a href="/product-details?id=<%= product._id %>">
-        <img src="/uploads/products/<%= cleanFileName %>" alt="<%= product.productName %>" />
-        <h3><%= product.productName %></h3>
-        <p>£<%= product.price %></p>
-      </a>
-       <button class="add-to-cart-btn">Add to Cart</button>
-    </div>
-  <% }); %>
-<% } else { %>
-  <p>No products found.</p>
-<% } %>
-</main> 
+    <select name="category">
+  <option value="">All Categories</option>
+  <% categories.forEach(cat => { %>
+    <option value="<%= cat.name %>" <%= category === cat.name ? 'selected' : '' %>>
+      <%= cat.name.charAt(0).toUpperCase() + cat.name.slice(1) %>
+    </option>
+  <% }) %>
+</select>
 
 
+        <select name="sortBy">
+          <option value="">Sort By</option>
+          <option value="priceLow" <%= sortBy === 'priceLow' ? 'selected' : '' %>>Price: Low to High</option>
+          <option value="priceHigh" <%= sortBy === 'priceHigh' ? 'selected' : '' %>>Price: High to Low</option>
+          <option value="nameAsc" <%= sortBy === 'nameAsc' ? 'selected' : '' %>>Name: A to Z</option>
+          <option value="nameDesc" <%= sortBy === 'nameDesc' ? 'selected' : '' %>>Name: Z to A</option>
+        </select>
 
+        <input
+          type="number"
+          name="minPrice"
+          placeholder="Min Price"
+          min="0"
+          value="<%= typeof minPrice !== 'undefined' && minPrice !== 0 ? minPrice : '' %>"
+        />
+
+        <input
+          type="number"
+          name="maxPrice"
+          placeholder="Max Price"
+          min="0"
+          value="<%= typeof maxPrice !== 'undefined' && maxPrice !== Number.MAX_SAFE_INTEGER ? maxPrice : '' %>"
+        />
+
+        <button type="submit">Apply</button>
+        <button type="button" id="clearFiltersBtn">Clear</button>
+      </form>
+    </aside>
+
+    <!-- Product Grid -->
+    <main class="product-grid">
+      <% if (products && products.length > 0) { %>
+        <% products.forEach(product => {
+          const cleanFileName = product.productImage[0].split('\\').pop().split('/').pop();
+        %>
+          <div class="product-card">
+           <form action="/add-to-wishlist" method="POST" class="wishlist-form">
+  <input type="hidden" name="productId" value="<%= product._id %>">
+  <button type="submit" class="wishlist-btn" title="Add to wishlist">❤️</button>
+</form>
+
+            <a href="/product-details?id=<%= product._id %>">
+              <div class="product-image-container">
+                <img src="/uploads/products/<%= cleanFileName %>" alt="<%= product.productName %>" />
+              </div>
+
+              <h4><%= product.productName %></h4>
+              <!-- <p>£<%= product.price %></p> -->
+               <!-- Price & Discount -->
+                <!-- Price & Discount -->
+                 <div class="price-section">
+  <span class="discounted-price">£<%= product.finalPrice %></span>
+
+  <% if (product.appliedDiscount > 0) { %>
+    <span class="original-price">£<%= product.originalPrice.toFixed(2) %></span>
+    <span class="discount-badge"><%= product.appliedDiscount %>% OFF</span>
+    <small class="text-muted">(<%= product.discountSource %>)</small>
+  <% } %>
+</div>
+
+
+
+
+
+
+              
+            </a>
+
+            <div class="product-action">
+              <form action="/add-to-cart" method="POST" style="display: flex; align-items: center; gap: 8px;">
+                <input type="hidden" name="productId" value="<%= product._id %>">
+
+                <% const isUnavailable = product.stock === 0 || product.isBlocked || (product.category && product.category.isBlocked) || !product.isListed; %>
+
+                <% if (!isUnavailable) { %>
+                  <button type="button" onclick="decrementQty(this)">−</button>
+                  <input type="number" name="quantity" value="1" min="1" max="<%= product.stock %>" readonly>
+                  <button type="button" onclick="incrementQty(this, '<%= product.stock %>')">+</button>
+                <% } else { %>
+                  <button type="button" disabled>−</button>
+                  <input type="number" value="0" readonly disabled>
+                  <button type="button" disabled>+</button>
+                <% } %>
+
+                <button type="submit"
+                  class="add-to-cart-btn"
+                  <%= isUnavailable ? 'disabled' : '' %>>
+                  <%= isUnavailable ? 'Unavailable' : 'Add to Cart' %>
+                </button>
+              </form>
+            </div>
+
+          </div>
+        <% }); %>
+      <% } else { %>
+        <p>No products found.</p>
+      <% } %>
+    </main>
+
+  </div>
 
   <!-- Pagination -->
- <% if (totalPages && totalPages > 1) { %>
-  <nav aria-label="Page navigation" class="pagination-nav" style="margin-top: 30px;">
-    <ul>
-      <% for (let i = 1; i <= totalPages; i++) { 
-           // Build url with query params for page, search, category, sortBy, minPrice, maxPrice
-           let url = `?page=${i}`;
-           if (searchQuery) url += `&search=${encodeURIComponent(searchQuery)}`;
-           if (category) url += `&category=${encodeURIComponent(category)}`;
-           if (sortBy) url += `&sortBy=${encodeURIComponent(sortBy)}`;
-           if (minPrice) url += `&minPrice=${minPrice}`;
-           if (maxPrice && maxPrice !== Number.MAX_SAFE_INTEGER) url += `&maxPrice=${maxPrice}`;
-      %>
-        <li>
-          <a href="<%= url %>" class="<%= i === currentPage ? 'active-page' : '' %>"><%= i %></a>
-        </li>
-      <% } %>
-    </ul>
-  </nav>
-<% } %>
+  <% if (totalPages && totalPages > 1) { %>
+    <nav aria-label="Page navigation" class="pagination-nav" style="margin-top: 30px;">
+      <ul>
+        <% for (let i = 1; i <= totalPages; i++) { 
+             let url = `?page=${i}`;
+             if (searchQuery) url += `&search=${encodeURIComponent(searchQuery)}`;
+             if (category) url += `&category=${encodeURIComponent(category)}`;
+             if (sortBy) url += `&sortBy=${encodeURIComponent(sortBy)}`;
+             if (minPrice) url += `&minPrice=${minPrice}`;
+             if (maxPrice && maxPrice !== Number.MAX_SAFE_INTEGER) url += `&maxPrice=${maxPrice}`;
+        %>
+          <li>
+            <a href="<%= url %>" class="<%= i === currentPage ? 'active-page' : '' %>"><%= i %></a>
+          </li>
+        <% } %>
+      </ul>
+    </nav>
+  <% } %>
 
 </div>
+<% products.forEach((product) => { %>
+  <!-- Product UI -->
+
+  <script>
+    let productOffer = '<%- JSON.stringify(product.productOffer || {}) %>';
+    let categoryOffer = '<%- JSON.stringify(product.category?.categoryOffer || {}) %>';
+    console.log("Product ID:", "<%= product._id %>");
+    console.log("Product Offer:", productOffer);
+    console.log("Category Offer:", categoryOffer);
+  </script>
+
+<% }) %>
+
+
+
 
 <script>
   // Clear button resets the filters and reloads the page without query params
   document.getElementById('clearFiltersBtn').addEventListener('click', () => {
     window.location.href = '/shop';
   });
+
+  function decrementQty(btn) {
+    const input = btn.nextElementSibling;
+    let currentValue = parseInt(input.value);
+    if (currentValue > 1) {
+      input.value = currentValue - 1;
+    }
+  }
+
+function incrementQty(button, maxQty) {
+  maxQty = parseInt(maxQty); // convert string to number
+  const input = button.previousElementSibling; // or however you get the input
+  let currentVal = parseInt(input.value) || 0;
+  if (currentVal < maxQty) {
+    input.value = currentVal + 1;
+  }
+}
+
 </script>
 
 <%- include("../../views/partials/user/footer") %>

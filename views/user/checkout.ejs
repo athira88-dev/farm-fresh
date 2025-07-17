@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Checkout</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f9f9f9;
+      padding-top: 190px; /* Adjust based on your header height */
+    }
+    .checkout-container {
+      max-width: 700px;
+      margin: auto;
+      background: white;
+      padding: 50px;
+      border-radius: 5px;
+      box-shadow: 0 0 8px rgba(0,0,0,0.1);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+    th, td {
+      padding: 12px 15px;
+      border: 1px solid #ddd;
+      text-align: left;
+      vertical-align: middle;
+    }
+    th {
+      background-color: #f2f2f2;
+    }
+    .total-row td {
+      font-weight: bold;
+      font-size: 1.1em;
+    }
+    h2, h3 {
+      color: #333;
+    }
+    .empty-message {
+      text-align: center;
+      font-style: italic;
+      color: #555;
+      margin-top: 30px;
+    }
+    label {
+      font-weight: bold;
+      display: block;
+      margin-top: 20px;
+      margin-bottom: 8px;
+    }
+    input[type="text"], select {
+      width: 100%;
+      padding: 8px;
+      margin-bottom: 15px;
+      box-sizing: border-box;
+      border: 1px solid #ccc;
+      border-radius: 3px;
+    }
+    .address-list {
+      margin-bottom: 20px;
+    }
+    .address-item {
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .address-item label {
+      flex-grow: 1;
+      margin: 0;
+      cursor: pointer;
+    }
+    .address-actions a,
+    .address-actions button {
+      margin-left: 10px;
+      font-size: 0.9em;
+      background: none;
+      border: none;
+      color: #007bff;
+      cursor: pointer;
+      text-decoration: none;
+      padding: 0;
+    }
+    .address-actions button {
+      color: #dc3545;
+    }
+    .address-actions a:hover,
+    .address-actions button:hover {
+      text-decoration: underline;
+    }
+    button.place-order-btn {
+      display: block;
+      width: 100%;
+      background-color: #3bcf0d;
+      color: white;
+      border: none;
+      padding: 12px;
+      font-size: 16px;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-top: 25px;
+    }
+    button.place-order-btn:hover {
+      background-color: #218838;
+    }
+    .payment-methods label {
+      display: block;
+      margin-bottom: 10px;
+      cursor: pointer;
+      font-weight: normal;
+    }
+    #removeCouponBtn {
+  display: none;
+}
+  </style>
+</head>
+<body>
+  <%- include('../../views/partials/user/header') %>
+
+  <div class="checkout-container">
+   <h2>Checkout</h2>
+<% if (!cartItems || cartItems.length === 0) { %>
+  <p class="empty-message">Your cart is empty.</p>
+<% } else { %>
+  <table>
+    <thead>
+      <tr>
+        <th>Product Image</th>
+        <th>Product Name</th>
+        <th>Quantity</th>
+        <th>Price (per unit)</th>
+        <th>Discount</th>
+        <th>Final Price</th>
+        <th>Total Price</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% cartItems.forEach(item => { %>
+        <tr>
+          <td>
+        <img 
+  src="/uploads/products/<%= (item.productImage && item.productImage[0]) ? (item.productImage[0].split('\\').pop().split('/').pop()) : 'placeholder.png' %>" 
+  alt="<%= item.productName %>" 
+  style="width: 50px; height: 50px; object-fit: cover;"
+  onerror="this.onerror=null;this.src='/images/placeholder.png';"
+/>
+
+          </td>
+          <td><%= item.productName %></td>
+          <td><%= item.quantity %></td>
+          <td>£<%= item.originalPrice.toFixed(2) %></td>
+          <td>
+            <% if (item.appliedDiscount > 0) { %>
+              <span class="discount-badge"><%= item.appliedDiscount %>% OFF</span>
+              <small class="text-muted">(<%= item.discountSource %>)</small>
+            <% } else { %>
+              No Discount
+            <% } %>
+          </td>
+          <td>£<%= item.finalPrice.toFixed(2) %></td>
+          <td>£<%= (item.finalPrice * item.quantity).toFixed(2) %></td>
+        </tr>
+      <% }) %>
+   <tr class="total-row">
+  <td colspan="5" style="text-align:right;">Subtotal:</td>
+  <td>£<%= subtotal %></td>
+</tr>
+
+<!-- <tr class="total-row" id="discount-row" style="display: none;">
+  <td colspan="5" style="text-align:right;">Discount:</td>
+  <td>-£<span id="discount-amount"></span></td>
+</tr> -->
+
+<tr class="total-row">
+  <td colspan="5" style="text-align:right;">Tax:</td>
+  <td>£<%= taxAmount %></td>
+</tr>
+
+<tr class="total-row">
+  <td colspan="5" style="text-align:right;">Shipping:</td>
+  <td>£<%= shippingCost.toFixed(2) %></td>
+</tr>
+
+<tr class="total-row">
+  <td colspan="5" style="text-align:right; font-weight:bold;">Grand Total:</td>
+  <td><strong>£<%= grandTotal %></strong></td>
+</tr>
+
+    </tbody>
+  </table>
+<% } %>
+
+
+      <form action="/place-order" method="POST">
+        <h3>Select Shipping Address</h3>
+        <div class="address-list">
+          <% if (!addresses || addresses.length === 0) { %>
+            <p>No saved addresses. Please add one in your profile.</p>
+          <% } else { %>
+            <% addresses.forEach(addr => { %>
+              <div class="address-item">
+                <label>
+                  <input
+                    type="radio"
+                    name="selectedAddressId"
+                    value="<%= addr._id %>"
+                    <%= selectedAddressId === addr._id.toString() ? 'checked' : '' %>
+                    required
+                  />
+                  <strong><%= addr.addressType %></strong> — <%= addr.name %>, <%= addr.street %>, <%= addr.city %>, <%= addr.state %>, <%= addr.postcode %>, <%= addr.country %>, Phone: <%= addr.phone %>
+                </label>
+                <div class="address-actions">
+                  <a href="/manage-address?returnTo=/checkout">Edit</a>
+                  <button type="submit" formaction="/delete-address/<%= addr._id %>?returnTo=/checkout" formmethod="POST" onclick="return confirm('Delete this address?')">Delete</button>
+                </div>
+              </div>
+            <% }); %>
+          <% } %>
+        </div>
+        <div>  <!-- Add address link -->
+  <a href="/manage-address?returnTo=/checkout" class="btn btn-sm btn-outline-primary me-2">Add address</a>
+</div>
+
+        
+
+        <h3>Payment Method</h3>
+        <div class="payment-methods">
+          <label>
+            <input type="radio" name="paymentMethod" value="COD" <%= paymentMethod === 'COD' ? 'checked' : '' %> required />
+            Cash on Delivery
+          </label>
+          <label>
+            <input type="radio" name="paymentMethod" value="Card" <%= paymentMethod === 'Card' ? 'checked' : '' %> />
+            Credit/Debit Card
+          </label>
+          <label>
+            <input type="radio" name="paymentMethod" value="PayPal" <%= paymentMethod === 'PayPal' ? 'checked' : '' %> />
+            PayPal
+          </label>
+          <div id="paypal-button-container" style="margin-top: 20px; display: none;"></div>
+          <label>
+            <input type="radio" name="paymentMethod" value="NetBanking" <%= paymentMethod === 'NetBanking' ? 'checked' : '' %> />
+            Net Banking
+          </label>
+        </div>
+
+<label for="couponApplied">Coupon Code</label>
+<input
+  type="text"
+  id="couponApplied"
+  name="couponApplied"
+  placeholder="Enter coupon code"
+/>
+<button id="applyCouponBtn" type="button">Apply Coupon</button>
+<button id="removeCouponBtn" class="btn btn-danger">Remove Coupon</button>
+
+
+<div id="couponMessage" style="margin-top:10px; color: green;"></div>
+<!-- Show discount if applied -->
+<table>
+  <tbody>
+    <tr id="discountRow" style="display:none;">
+      <td colspan="5" style="text-align:right;">Discount:</td>
+      <td id="discountAmount"></td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+        <!-- Add this hidden field to pass the discount value -->
+<input type="hidden" name="discount" value="<%= discount || 0 %>">
+
+        <button type="submit" class="place-order-btn">Place Order</button>
+      </form>
+ 
+  </div>
+
+  
+
+  <%- include('../../views/partials/user/footer') %>
+
+  <script src="https://www.paypal.com/sdk/js?client-id=AS6jTbViQm4oXSHQqT7q7i5kBXVev28yI0DvXDJtGQLfDF09_EtL91mtKbNB7y8dZBAFt59OlDIKhbb3&currency=GBP"></script>
+
+<script>
+         const selectedAddressInput = document.querySelector('input[name="selectedAddressId"]:checked');
+  const selectedAddressId = selectedAddressInput ? selectedAddressInput.value : null;
+
+      
+  const discountValue = parseFloat(document.querySelector('input[name="discount"]').value || 0);
+  // const couponAppliedFlag = document.getElementById('couponApplied').value || '';
+      // Call your backend to place the order and save data
+</script>
+
+
+<script>
+  const paypalRadio = document.querySelector('input[value="PayPal"]');
+  const codRadio = document.querySelector('input[value="COD"]');
+  const placeOrderBtn = document.querySelector('.place-order-btn');
+  const paypalContainer = document.getElementById('paypal-button-container');
+
+  const showPaypalButton = () => {
+    paypalContainer.style.display = 'block';
+    placeOrderBtn.style.display = 'none';
+  };
+
+  const hidePaypalButton = () => {
+    paypalContainer.style.display = 'none';
+    placeOrderBtn.style.display = 'block';
+  };
+
+  document.querySelectorAll('input[name="paymentMethod"]').forEach((el) => {
+    el.addEventListener('change', () => {
+      if (paypalRadio.checked) {
+        showPaypalButton();
+      } else {
+        hidePaypalButton();
+      }
+    });
+  });
+
+  paypal.Buttons({
+    createOrder: function(data, actions) {
+      // Use finalAmount passed from backend (exact total amount)
+        const grandTotalText = document.querySelector('tr.total-row:last-child td:last-child').textContent;
+  const updatedAmount = parseFloat(grandTotalText.replace(/[^\d.]/g, '')).toFixed(2);
+
+
+      return actions.order.create({
+        purchase_units: [{
+          amount: {
+             value: updatedAmount
+          }
+        }]
+      });
+    },
+
+    onApprove: function(data, actions) {
+      if (!selectedAddressId) {
+        alert('Please select a shipping address before proceeding.');
+        return;
+      }
+
+      return actions.order.capture().then(function(details) {
+        // No need to pass discount separately; backend reads from session
+
+        return fetch('/place-paypal-order', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            orderID: data.orderID,
+            payerID: data.payerID,
+            addressId: selectedAddressId
+            // discount removed here to avoid mismatch; backend reads session coupon
+          })
+        })
+        .then(res => res.text())
+        .then(html => {
+          document.open();
+          document.write(html);
+          document.close();
+        })
+        .catch(err => {
+          alert('Error processing order. Please try again.');
+          console.error(err);
+        });
+      });
+    },
+
+    onError: function(err) {
+      alert('Payment failed or canceled. Please try again.');
+      window.location.href = '/order-failure';
+    }
+  }).render('#paypal-button-container');
+</script>
+
+
+
+<!-- coupon -->
+<script>
+  document.getElementById('applyCouponBtn').addEventListener('click', async () => {
+  const couponCode = document.getElementById('couponApplied').value.trim();
+
+  if (!couponCode) {
+    document.getElementById('couponMessage').textContent = 'Please enter a coupon code.';
+    return;
+  }
+
+  try {
+    const response = await fetch('/apply-coupon', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ couponCode }),
+    });
+
+    const result = await response.json();
+
+    if (result.success) {
+      const discountAmount = result.discount.toFixed(2);
+      const newGrandTotal = result.newTotal.toFixed(2);
+
+      document.getElementById('couponMessage').textContent = result.message;
+
+      const discountRow = document.getElementById('discountRow');
+      discountRow.style.display = 'table-row';
+      document.getElementById('discountAmount').textContent = `-£${discountAmount}`;
+
+      const grandTotalCell = document.querySelector('tr.total-row:last-child td:last-child');
+      grandTotalCell.innerHTML = `<strong>£${newGrandTotal}</strong>`;
+
+      document.querySelector('input[name="discount"]').value = result.discount;
+        // 👇 Add this block to handle UI changes when coupon is applied
+  document.getElementById('removeCouponBtn').style.display = 'inline-block';
+  document.getElementById('applyCouponBtn').disabled = true;
+  document.getElementById('couponApplied').disabled = true;
+
+
+    } else {
+      document.getElementById('couponMessage').textContent = result.message;
+    }
+
+  } catch (err) {
+    console.error('Error applying coupon:', err);
+    document.getElementById('couponMessage').textContent = 'Something went wrong. Please try again.';
+  }
+});
+
+
+</script>
+
+<script>document.getElementById('removeCouponBtn').addEventListener('click', async () => {
+  try {
+    const response = await fetch('/remove-coupon', {
+      method: 'POST',
+    });
+
+    const result = await response.json();
+
+    if (result.success) {
+      document.getElementById('couponMessage').textContent = result.message;
+
+      // Hide discount row and reset values
+      document.getElementById('discountRow').style.display = 'none';
+      document.getElementById('discountAmount').textContent = '';
+
+      // Optionally reload the page or recalculate grand total from DOM
+      location.reload(); // easiest way if values come from server
+
+    } else {
+      document.getElementById('couponMessage').textContent = result.message;
+    }
+  } catch (err) {
+    console.error('Error removing coupon:', err);
+    document.getElementById('couponMessage').textContent = 'Something went wrong while removing coupon.';
+  }
+});
+</script>
+
+
+
+
+  
+</body>
+</html>

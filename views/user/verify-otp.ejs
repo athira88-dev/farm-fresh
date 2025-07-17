@@ -204,7 +204,7 @@
         return false
     }
 
-    function resendOTP(){
+   function resendOTP(){
         clearInterval(timerInterval)
         timer=60;
         document.getElementById('otp').disabled=false
@@ -234,6 +234,7 @@
         
         })
     }
+
 
 </script>
 <%- include("../../views/partials/user/footer") %>

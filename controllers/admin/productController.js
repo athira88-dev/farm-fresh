@@ -2,6 +2,7 @@ const Category = require('../../models/categorySchema');
 // const brandModel = require("../../models/brandSchema");
 const Product = require('../../models/productSchema');
 const User = require("../../models/userSchema");
+const { applyBestOffer } = require('../../helpers/offerCalculator');
 const fs = require('fs');
 const path = require('path');
 const sharp = require('sharp')
@@ -92,7 +93,7 @@ const displayProducts = async (req, res) => {
         const filter = {
             productName: { $regex: new RegExp(search, 'i') },
             isDeleted: false,
-            isListed: true, // optional: include if you only want listed products
+            // isListed: true,  optional: include if you only want listed products
         };
 
        const productData = await Product.find(filter)
@@ -107,8 +108,10 @@ const displayProducts = async (req, res) => {
 
         const categories = await Category.find({ isListed: true, isDeleted: false });
 
+        const updatedProducts = productData.map(p => applyBestOffer(p));
+
         res.render('product', {
-            products: productData,
+            products: updatedProducts,
             currentPage: page,
             totalPages: Math.ceil(count / limit),
             categories
@@ -263,6 +266,46 @@ const deleteProduct = async (req, res) => {
   }
 };
 
+// Assuming you use async/await and Mongoose
+
+
+// Toggle block/unblock
+const toggleBlockStatus = async (req, res) => {
+  const productId = req.params.id;
+  try {
+    const product = await Product.findById(productId);
+    if (!product) {
+      return res.status(404).send('Product not found');
+    }
+    // Toggle isBlocked flag
+    product.isBlocked = !product.isBlocked;
+    await product.save();
+
+    res.status(200).send(`Product is now ${product.isBlocked ? 'blocked' : 'unblocked'}`);
+  } catch (err) {
+    res.status(500).send('Server error: ' + err.message);
+  }
+};
+
+// Toggle list/unlist
+const toggleListStatus = async (req, res) => {
+  const productId = req.params.id;
+  try {
+    const product = await Product.findById(productId);
+    if (!product) {
+      return res.status(404).send('Product not found');
+    }
+    // Toggle isListed flag
+    product.isListed = !product.isListed;
+    await product.save();
+
+    res.status(200).send(`Product is now ${product.isListed ? 'listed' : 'unlisted'}`);
+  } catch (err) {
+    res.status(500).send('Server error: ' + err.message);
+  }
+};
+
+
 
 
 module.exports = {
@@ -270,6 +313,8 @@ module.exports = {
     addProducts,
     displayProducts,
     editProduct,
-    deleteProduct
+    deleteProduct,
+    toggleBlockStatus,
+    toggleListStatus
 
 }

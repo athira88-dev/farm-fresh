@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+      <%- include('../../views/partials/user/header') %>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Product Detail</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    .product-container { max-width: 400px; margin: auto; border: 1px solid #ccc; padding: 15px; border-radius: 5px; }
+    .product-image { width: 100%; height: auto; }
+    button { background-color: #28a745; color: white; border: none; padding: 10px 15px; cursor: pointer; border-radius: 3px; }
+    button:hover { background-color: #218838; }
+  </style>
+</head>
+<body>
+
+  <div class="product-container">
+    <h2><%= product.name %></h2>
+    <img src="<%= product.imageURL %>" alt="<%= product.name %>" class="product-image" />
+    <p>Price: $<%= product.price.toFixed(2) %></p>
+    <p><%= product.description %></p>
+
+    <% if (product.isBlocked || !product.isListed || product.isDeleted) { %>
+      <p style="color: red; font-weight: bold;">This product is not available.</p>
+    <% } else if (product.stock <= 0) { %>
+      <p style="color: red; font-weight: bold;">Out of stock</p>
+      <button disabled>Add to Cart</button>
+    <% } else { %>
+      <form action="/add-to-cart" method="POST">
+        <input type="hidden" name="productId" value="<%= product._id %>" />
+        <button type="submit">Add to Cart</button>
+      </form>
+    <% } %>
+  </div>
+<%- include('../../views/partials/user/footer') %>
+</body>
+</html>
