@@ -12,6 +12,7 @@ const userRouter=require('./routes/userRouter')
 
 const adminRouter=require('./routes/adminRouter')
 db() // Call the DB connection function
+// app.use(express.static('public'));
 app.use(express.json())// Parse incoming JSON data in request bodies
 app.use(express.urlencoded({extended:true}))// Parse URL-encoded data (e.g., from HTML form submissions)
 app.use(cookieParser());//populate req.cookies 

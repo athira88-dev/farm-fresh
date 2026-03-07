@@ -193,32 +193,38 @@ if (outOfStockItems.length > 0) {
 
 const viewRetryCheckout = async (req, res) => {
   try {
+    const shippingCost = 4.99;
+    const taxRate = 0.05;
+
+    const userId = req.session.user;
+    if (!userId) return res.redirect('/login');
+
+    const userObjId = new mongoose.Types.ObjectId(userId);
     const { orderId } = req.params;
-    const userId = req.session.user; // ✅ Extract ObjectId string
-    const userObjId = new mongoose.Types.ObjectId(userId); // ✅ Ensure it's ObjectId
-    console.log('User ID from session:', req.session.user);
-    console.log('UserObj ID :', userObjId);
-        console.log('Order ID from params:', orderId);
 
-    const order = await Order.findOne({ orderId: orderId, user: userObjId }).populate({
-      path: 'orderedItems.product',
-      select: 'productName productImage price discount productOffer category',
-      populate: {
-        path: 'category',
-        select: 'categoryOffer'
-      }
-    });
-
-      const addressDoc = await Address.findOne({ userId });
+    // ✅ Fetch user addresses
+    const addressDoc = await Address.findOne({ userId });
     const addresses = addressDoc?.address || [];
     const selectedAddressId = addresses.length > 0 ? addresses[0]._id.toString() : null;
     const selectedAddress = addresses.find(addr => addr._id.toString() === selectedAddressId) || null;
 
+    // ✅ Find the order by _id and user
+    const order = await Order.findOne({
+      _id: new mongoose.Types.ObjectId(orderId),
+      user: userObjId
+    }).populate({
+      path: 'orderedItems.product',
+      select: 'productName productImage price discount productOffer category',
+      populate: { path: 'category', select: 'categoryOffer' }
+    });
 
     if (!order) return res.status(404).send('Order not found');
+    if (order.status !== 'Failed') return res.status(400).send('Payment retry allowed only for failed orders');
 
+    // ✅ Build cart items from the order
     const cartItems = order.orderedItems.map(item => {
       const bestOfferProduct = applyBestOffer(item.product);
+
       return {
         productId: item.product._id,
         quantity: item.quantity,
@@ -231,41 +237,38 @@ const viewRetryCheckout = async (req, res) => {
       };
     });
 
+    // ✅ Calculate totals
     const subtotal = cartItems.reduce((sum, item) => sum + item.finalPrice * item.quantity, 0);
-    const taxRate = 0.05;
-    const shippingCost = 4.99;
-    const taxAmount = subtotal * taxRate;
-    const totalOfferDiscount = cartItems.reduce((sum, item) => {
-      return sum + (item.originalPrice - item.finalPrice) * item.quantity;
-    }, 0);
+    const totalOfferDiscount = cartItems.reduce((sum, item) => sum + (item.originalPrice - item.finalPrice) * item.quantity, 0);
     const couponDiscount = order.couponDiscount || 0;
-    const grandTotal = subtotal + taxAmount + shippingCost;
-        const totalDiscount = totalOfferDiscount + couponDiscount;
+    const totalDiscount = totalOfferDiscount + couponDiscount;
 
+    const finalAmount = subtotal - couponDiscount;
+    const taxAmount = +(finalAmount * taxRate).toFixed(2);
+    const grandTotal = +(finalAmount + taxAmount + shippingCost).toFixed(2);
+
+    // ✅ Render the checkout page (retry)
     res.render('checkout-retry', {
       cartItems,
+      addresses,
+      selectedAddress,
+      selectedAddressId,
       shippingCost,
       taxAmount: taxAmount.toFixed(2),
       subtotal: subtotal.toFixed(2),
       grandTotal: grandTotal.toFixed(2),
-       discount: totalDiscount.toFixed(2),
+      paymentMethod: '',
+      couponCode: order.couponCode || '',
+      discount: totalDiscount.toFixed(2),
       discountAmount: totalDiscount.toFixed(2),
-      couponApplied: couponDiscount > 0,
-      paymentMethod: order.paymentMethod || '',
-      orderId: order.orderId, // << add this line
-      couponCode: '',
-      addresses,
-      selectedAddress,
-      selectedAddressId,
-
-
+      couponApplied: couponDiscount > 0
     });
+
   } catch (err) {
-    console.error('Retry Checkout Error:', err);
+    console.error('Retry checkout error:', err);
     res.status(500).send('Internal Server Error');
   }
 };
-
 
 
 

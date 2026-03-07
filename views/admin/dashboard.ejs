@@ -49,19 +49,20 @@
           <tbody>
             <% reportData.forEach(row => { %>
               <tr>
-                <td>
-                  <% if (row._id.day) { %>
-                    <%= row._id.day %>-<%= row._id.month %>-<%= row._id.year %>
-                  <% } else if (row._id.week) { %>
-                    Week <%= row._id.week %>, <%= row._id.year %>
-                  <% } else if (row._id.month) { %>
-                    <%= row._id.month %>-<%= row._id.year %>
-                  <% } else if (row._id.year) { %>
-                    <%= row._id.year %>
-                  <% } else { %>
-                    Total
-                  <% } %>
-                </td>
+         <td>
+  <% if (row._id.day && row._id.month && row._id.year) { %>
+    <%= row._id.day %>/<%= row._id.month %>/<%= row._id.year %>
+  <% } else if (row._id.week && row._id.year) { %>
+    Week <%= row._id.week %>, <%= row._id.year %>
+  <% } else if (row._id.month && row._id.year) { %>
+    <%= row._id.month %>/<%= row._id.year %>
+  <% } else if (row._id.year) { %>
+    <%= row._id.year %>
+  <% } else { %>
+    Total7
+  <% } %>
+</td>
+
                 <td><%= row.totalOrders %></td>
                 <td>£ <%= row.totalPrice.toFixed(2) %></td>
                 <td>£ <%= row.totalDiscount.toFixed(2) %></td>
@@ -79,6 +80,115 @@
   <% } else { %>
     <p class="text-muted">No data to show. Use filters above to generate report.</p>
   <% } %>
+
+
+  <!-- ===== Sales Report Chart ===== -->
+<% if (chartLabels && chartData) { %>
+<div class="card mt-4">
+  <div class="card-body">
+    <h4>Sales Chart (<%= groupBy %>)</h4>
+    <canvas id="salesChart" height="100"></canvas>
+  </div>
+</div>
+<% } %>
+
+<!-- ===== Top 10 Products ===== -->
+<% if (topProducts && topProducts.length > 0) { %>
+<div class="card mt-4">
+  <div class="card-body">
+    <h4>Top 10 Selling Products</h4>
+    <canvas id="productChart" height="150"></canvas>
+  </div>
+</div>
+<% } %>
+
+<!-- ===== Top 10 Categories ===== -->
+<% if (topCategories && topCategories.length > 0) { %>
+<div class="card mt-4">
+  <div class="card-body">
+    <h4>Top 10 Selling Categories</h4>
+    <canvas id="categoryChart" height="150"></canvas>
+  </div>
+</div>
+<% } %>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  // Sales Chart
+  '<% if (chartLabels && chartData) { %>'
+  new Chart(document.getElementById('salesChart').getContext('2d'), {
+    type: 'bar',
+    data: {
+      labels: '<%- JSON.stringify(chartLabels) %>',
+      datasets: [{
+        label: 'Total Final Amount (£)',
+        backgroundColor: 'rgba(54, 162, 235, 0.6)',
+        data: '<%- JSON.stringify(chartData) %>'
+      }]
+    },
+    options: {
+      responsive: true,
+      scales: {
+        y: { beginAtZero: true }
+      }
+    }
+  });
+  '<% } %>'
+
+  // Product Chart
+  '<% if (topProducts && topProducts.length > 0) { %>'
+  new Chart(document.getElementById('productChart').getContext('2d'), {
+    type: 'bar',
+    data: {
+      labels: '<%- JSON.stringify(topProducts.map(p => p.name)) %>',
+      datasets: [{
+        label: 'Units Sold',
+        backgroundColor: 'rgba(255, 99, 132, 0.6)',
+        data: '<%- JSON.stringify(topProducts.map(p => p.totalSold)) %>'
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      scales: {
+        x: { beginAtZero: true }
+      }
+    }
+  });
+  '<% } %>'
+
+  // Category Chart
+  '<% if (topCategories && topCategories.length > 0) { %>'
+  new Chart(document.getElementById('categoryChart').getContext('2d'), {
+    type: 'bar',
+    data: {
+      labels: '<%- JSON.stringify(topCategories.map(c => c.name)) %>',
+      datasets: [{
+        label: 'Units Sold',
+        backgroundColor: 'rgba(255, 206, 86, 0.6)',
+        data: '<%- JSON.stringify(topCategories.map(c => c.totalSold)) %>'
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      scales: {
+        x: { beginAtZero: true }
+      }
+    }
+  });
+  '<% } %>'
+</script>
+
+
+
+
+
+
+
 </section>
+
+
+
 
 <%- include("../../views/partials/admin/footer") %>

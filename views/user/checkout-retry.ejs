@@ -3,7 +3,17 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Checkout</title>
+  <title>Retry Checkout</title>
+
+  <!-- CSS -->
+<!-- CSS -->
+<link rel="stylesheet" href="/css/style.css">
+
+<!-- Owl Carousel -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/assets/owl.carousel.min.css">
+
+<!-- Lightbox -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.4/css/lightbox.min.css">
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -64,8 +74,17 @@
   </style>
 </head>
 <body>
+
+    <style>
+    body {
+  padding-top: 180px; /* or height of your header */
+}
+  </style>
+  <!-- Header Include -->
+  <%- include('../../views/partials/user/header') %>
+
   <div class="container">
-    <h2>Checkout</h2>
+    <h2>Retry Checkout</h2>
 
     <% if (!cartItems || cartItems.length === 0) { %>
       <p>Your cart is empty.</p>
@@ -96,7 +115,7 @@
       </table>
     <% } %>
 
-    <form action="/place-order" method="POST" id="checkout-form">
+    <form action="/retry-place-order" method="POST" id="checkout-form">
       <label for="selectedAddressId">Shipping Address</label>
       <select name="selectedAddressId" id="selectedAddressId" required>
         <% addresses.forEach(addr => { %>
@@ -114,7 +133,6 @@
       </div>
 
       <input type="text" name="couponApplied" placeholder="Coupon Code" value="<%= couponCode || '' %>">
-
       <input type="hidden" name="discount" value="<%= discount || 0 %>">
 
       <button type="submit" class="place-order-btn" id="place-order-btn">Place Order</button>
@@ -123,13 +141,38 @@
     <div id="paypal-button-container"></div>
   </div>
 
-  <script src="https://www.paypal.com/sdk/js?client-id=AS6jTbViQm4oXSHQqT7q7i5kBXVev28yI0DvXDJtGQLfDF09_EtL91mtKbNB7y8dZBAFt59OlDIKhbb3&currency=GBP"></script>
+  <!-- Footer Include -->
+  <%- include('../../views/partials/user/footer') %>
+
+  <!-- JS -->
+  <!-- <script src="/js/easing.min.js"></script>
+  <script src="/js/waypoints.min.js"></script>
+  <script src="/js/lightbox.min.js"></script>
+  <script src="/js/owl.carousel.min.js"></script>
+  <script src="/js/main.js"></script>
+
+  <script src="https://www.paypal.com/sdk/js?client-id=AS6jTbViQm4oXSHQqT7q7i5kBXVev28yI0DvXDJtGQLfDF09_EtL91mtKbNB7y8dZBAFt59OlDIKhbb3&currency=GBP"></script> -->
+
+<script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-easing/1.4.1/jquery.easing.min.js"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/waypoints/4.0.1/jquery.waypoints.min.js"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.4/js/lightbox.min.js"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/owl.carousel.min.js"></script>
+
+<script src="/js/main.js"></script>
+
+<!-- PayPal -->
+<script src="https://www.paypal.com/sdk/js?client-id=AS6jTbViQm4oXSHQqT7q7i5kBXVev28yI0DvXDJtGQLfDF09_EtL91mtKbNB7y8dZBAFt59OlDIKhbb3&currency=GBP"></script>
+
 
   <script>
     const paypalRadio = document.querySelector('input[value="PayPal"]');
     const placeOrderBtn = document.getElementById('place-order-btn');
     const paypalContainer = document.getElementById('paypal-button-container');
-    const form = document.getElementById('checkout-form');
 
     function togglePaypal(show) {
       if (show) {
@@ -142,20 +185,17 @@
     }
 
     document.querySelectorAll('input[name="paymentMethod"]').forEach(el => {
-      el.addEventListener('change', () => {
-        togglePaypal(paypalRadio.checked);
-      });
+      el.addEventListener('change', () => togglePaypal(paypalRadio.checked));
     });
 
-    // Initially toggle on page load
+    // Initial toggle
     togglePaypal(paypalRadio.checked);
 
     paypal.Buttons({
       createOrder: function(data, actions) {
-        const grandTotal = '<%= grandTotal %>';
         return actions.order.create({
           purchase_units: [{
-            amount: { value: grandTotal }
+            amount: { value: '<%= grandTotal %>' }
           }]
         });
       },
@@ -167,7 +207,7 @@
         }
 
         return actions.order.capture().then(function(details) {
-          return fetch('/place-paypal-order', {
+          return fetch('/retry-paypal-order', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({

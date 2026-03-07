@@ -378,6 +378,7 @@ console.log('Final amount:', finalAmount);
 
     const orderData = await orderRes.json();
 
+
     if (orderData.status !== 'COMPLETED') {
       return res.render('order-failure', {
         orderId: newOrder.orderId,
@@ -385,6 +386,15 @@ console.log('Final amount:', finalAmount);
         errorMessage: 'PayPal payment not completed.'
       });
     }
+////////////////////////$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$//////////////////////////////////////////
+    //CHANGE
+
+    // TEMPORARY: Force payment failure for testing
+// return res.render('order-failure', {
+//   orderId: newOrder._id,
+//   errorStatus: 'TEST_FAILURE',
+//   errorMessage: 'Simulated payment failure for testing purposes'
+// });
 
     // Step 7: Update order status
     newOrder.status = 'Processing';
@@ -892,18 +902,22 @@ const searchOrders = async (req, res) => {
 
 
 
+
+
 const paymentRetryController = async (req, res) => {
   try {
     if (!req.user) {
       return res.status(401).send('Unauthorized: Please login first');
     }
+
     const userId = req.user._id;
-    const orderId = req.params.orderId;
+    const orderId = req.params.orderId; // this comes from the URL
 
     console.log('User ID:', userId);
     console.log('Order ID:', orderId);
 
-    const order = await Order.findOne({ orderId: orderId, user: userId });
+    // ✅ Query by MongoDB _id instead of orderId field
+    const order = await Order.findOne({ _id: orderId, user: userId });
 
     if (!order) {
       return res.status(404).send('Order not found');
@@ -917,15 +931,14 @@ const paymentRetryController = async (req, res) => {
       return res.status(400).send('Payment retry allowed only for failed orders.');
     }
 
+    // Redirect to your retry checkout page
     res.redirect(`/retry-checkout/${orderId}`);
-
 
   } catch (error) {
     console.error('Error during payment retry:', error);
     res.status(500).send('Something went wrong during payment retry.');
   }
 };
-
 
 
 

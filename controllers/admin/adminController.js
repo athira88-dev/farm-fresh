@@ -1,7 +1,10 @@
 const User = require('../../models/userSchema')
 const Order = require('../../models/orderSchema'); 
+const Product = require('../../models/productSchema'); 
+const Category = require('../../models/categorySchema'); 
 const PDFDocument = require('pdfkit');
 const ExcelJS = require('exceljs');
+
 
 const qs = require('qs'); // make sure to install if not
 const mongoose = require('mongoose')
@@ -76,6 +79,8 @@ const login = async (req, res) => {
 
 
 
+
+
 const loadDashboard = async (req, res) => {
   try {
     if (!req.session.admin) {
@@ -85,7 +90,11 @@ const loadDashboard = async (req, res) => {
     const { startDate, endDate, groupBy } = req.query;
 
     let reportData = [];
+    let chartLabels = [];
+    let chartData = [];
     let queryString = '';
+    let topProducts = [];
+    let topCategories = [];
 
     if (startDate && endDate && groupBy && startDate !== '' && endDate !== '') {
       const match = {
@@ -96,6 +105,7 @@ const loadDashboard = async (req, res) => {
         },
       };
 
+      // Grouping logic
       let groupId;
       switch (groupBy) {
         case 'day':
@@ -126,7 +136,6 @@ const loadDashboard = async (req, res) => {
           groupId = null;
       }
 
-      // Aggregation pipeline with actual discount calculation
       const pipeline = [
         { $match: match },
         { $unwind: '$orderedItems' },
@@ -154,14 +163,97 @@ const loadDashboard = async (req, res) => {
             totalDiscount: { $subtract: ['$totalPrice', '$totalFinalAmount'] },
           },
         },
+        { $sort: { "_id.year": 1, "_id.month": 1, "_id.day": 1 } }
       ];
 
       reportData = await Order.aggregate(pipeline);
       queryString = qs.stringify(req.query);
+
+      // Prepare chart labels and data
+      chartLabels = reportData.map(r => {
+        if (r._id.day) return `${r._id.day}/${r._id.month}/${r._id.year}`;
+        if (r._id.week) return `Week ${r._id.week}, ${r._id.year}`;
+        if (r._id.month) return `${r._id.month}/${r._id.year}`;
+        if (r._id.year) return `${r._id.year}`;
+        return "Total";
+      });
+      chartData = reportData.map(r => r.totalFinalAmount);
+
+      // ====== Top 10 Products ======
+      topProducts = await Order.aggregate([
+        { $match: match },
+        { $unwind: "$orderedItems" },
+        {
+          $group: {
+            _id: "$orderedItems.productId",
+            totalSold: { $sum: "$orderedItems.quantity" }
+          }
+        },
+        { $sort: { totalSold: -1 } },
+        { $limit: 10 },
+        {
+          $lookup: {
+            from: "products",
+            localField: "_id",
+            foreignField: "_id",
+            as: "product"
+          }
+        },
+        { $unwind: "$product" },
+        {
+          $project: {
+            name: "$product.name",
+            totalSold: 1
+          }
+        }
+      ]);
+
+      // ====== Top 10 Categories ======
+      topCategories = await Order.aggregate([
+        { $match: match },
+        { $unwind: "$orderedItems" },
+        {
+          $lookup: {
+            from: "products",
+            localField: "orderedItems.productId",
+            foreignField: "_id",
+            as: "product"
+          }
+        },
+        { $unwind: "$product" },
+        {
+          $group: {
+            _id: "$product.category",
+            totalSold: { $sum: "$orderedItems.quantity" }
+          }
+        },
+        { $sort: { totalSold: -1 } },
+        { $limit: 10 },
+        {
+          $lookup: {
+            from: "categories",
+            localField: "_id",
+            foreignField: "_id",
+            as: "category"
+          }
+        },
+        { $unwind: "$category" },
+        {
+          $project: {
+            name: "$category.name",
+            totalSold: 1
+          }
+        }
+      ]);
     }
 
+    // Render EJS
     res.render('dashboard', {
       reportData,
+      chartLabels,
+      chartData,
+      topProducts,
+      topCategories,
       queryString,
       startDate: startDate || '',
       endDate: endDate || '',
@@ -171,13 +263,19 @@ const loadDashboard = async (req, res) => {
     console.error('Dashboard Error:', error);
     res.render('dashboard', {
       reportData: [],
+      chartLabels: [],
+      chartData: [],
+      topProducts: [],
+      topCategories: [],
       queryString: '',
-      startDate: startDate || '',
-      endDate: endDate || '',
-      groupBy: groupBy || '',
+      startDate: '',
+      endDate: '',
+      groupBy: '',
     });
   }
 };
+
+
 
 
 
@@ -464,6 +562,76 @@ const downloadSalesReportExcel = async (req, res) => {
 };
 
 
+const getSalesChartData = async (req, res) => {
+  const filter = req.query.filter;
+  const now = new Date();
+  let matchStage = {};
+  let groupStage = {};
+
+  if (filter === 'yearly') {
+    groupStage = {
+      _id: { year: { $year: "$createdAt" } },
+      total: { $sum: "$totalFinalAmount" }
+    };
+  } else if (filter === 'monthly') {
+    groupStage = {
+      _id: {
+        year: { $year: "$createdAt" },
+        month: { $month: "$createdAt" }
+      },
+      total: { $sum: "$totalFinalAmount" }
+    };
+  } else if (filter === 'weekly') {
+    const weekAgo = new Date();
+    weekAgo.setDate(weekAgo.getDate() - 7);
+    matchStage = { createdAt: { $gte: weekAgo } };
+
+    groupStage = {
+      _id: { day: { $dayOfWeek: "$createdAt" } },
+      total: { $sum: "$totalFinalAmount" }
+    };
+  }
+
+  const result = await Order.aggregate([
+    { $match: matchStage },
+    { $group: groupStage },
+    { $sort: { '_id': 1 } }
+  ]);
+const labels = [];
+const values = [];
+
+result.forEach(item => {
+  const id = item._id || {};
+
+  if (filter === 'yearly') {
+    if (id.year != null) {
+      labels.push(id.year.toString());
+    } else {
+      labels.push("Unknown");
+    }
+
+  } else if (filter === 'monthly') {
+    if (id.month != null && id.year != null) {
+      labels.push(`${id.month}-${id.year}`);
+    } else {
+      labels.push("Unknown");
+    }
+
+  } else if (filter === 'weekly') {
+    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    if (id.day != null) {
+      labels.push(days[id.day - 1]);
+    } else {
+      labels.push("Unknown");
+    }
+  }
+
+  values.push(item.total ?? 0); // fallback to 0 if total is null
+});
+
+
+  res.json({ labels, values });
+};
 
 
 
@@ -473,6 +641,8 @@ const downloadSalesReportExcel = async (req, res) => {
 
 
 
-module.exports = { loadLogin,login,loadDashboard,logout,pageerror,downloadSalesReportPDF,downloadSalesReportExcel}
+
+
+module.exports = { loadLogin,login,loadDashboard,logout,pageerror,downloadSalesReportPDF,downloadSalesReportExcel,getSalesChartData}
 
 
