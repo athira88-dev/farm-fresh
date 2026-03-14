@@ -32,13 +32,20 @@ const createCoupon = async (req, res) => {
     }
 
     // Validate dates
-    const expiryDate = new Date(expiredOn);
-    if (isNaN(expiryDate.getTime())) {
-      return res.status(400).json({ error: "Invalid expiry date" });
-    }
-    if (expiryDate < new Date()) {
-      return res.status(400).json({ error: "Expiry date must be in the future" });
-    }
+   // Validate dates
+const expiryDate = new Date(expiredOn);
+if (isNaN(expiryDate.getTime())) {
+  return res.status(400).json({ error: "Invalid expiry date" });
+}
+
+// Allow today
+const today = new Date();
+today.setHours(0, 0, 0, 0); 
+expiryDate.setHours(0, 0, 0, 0);
+
+if (expiryDate < today) {
+  return res.status(400).json({ error: "Expiry date must be today or in the future" });
+}
 
     // Validate offerPrice and minimumPrice are positive numbers
     if (offerPrice <= 0 || minimumPrice <= 0) {

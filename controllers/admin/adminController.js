@@ -179,74 +179,81 @@ const loadDashboard = async (req, res) => {
       });
       chartData = reportData.map(r => r.totalFinalAmount);
 
-      // ====== Top 10 Products ======
-      topProducts = await Order.aggregate([
-        { $match: match },
-        { $unwind: "$orderedItems" },
-        {
-          $group: {
-            _id: "$orderedItems.productId",
-            totalSold: { $sum: "$orderedItems.quantity" }
-          }
-        },
-        { $sort: { totalSold: -1 } },
-        { $limit: 10 },
-        {
-          $lookup: {
-            from: "products",
-            localField: "_id",
-            foreignField: "_id",
-            as: "product"
-          }
-        },
-        { $unwind: "$product" },
-        {
-          $project: {
-            name: "$product.name",
-            totalSold: 1
-          }
-        }
-      ]);
 
+const orders = await Order.find({ status: { $in: ['Delivered', 'Shipped'] } });
+console.log("Orders for top products:", orders.map(o => o.orderedItems));
+
+      // ====== Top 10 Products ======
+ topProducts = await Order.aggregate([
+  { $match: match },
+  { $unwind: "$orderedItems" },
+  {
+    $group: {
+      _id: "$orderedItems.product",
+      totalSold: { $sum: "$orderedItems.quantity" }
+    }
+  },
+  { $sort: { totalSold: -1 } },
+  { $limit: 10 },
+  {
+    $lookup: {
+      from: "products",
+      localField: "_id",
+      foreignField: "_id",
+      as: "product"
+    }
+  },
+  { $unwind: "$product" },
+  {
+    $project: {
+      name: "$product.productName", // ✅ use 'productName' instead of 'name'
+      totalSold: 1
+    }
+  }
+]);
       // ====== Top 10 Categories ======
       topCategories = await Order.aggregate([
-        { $match: match },
-        { $unwind: "$orderedItems" },
-        {
-          $lookup: {
-            from: "products",
-            localField: "orderedItems.productId",
-            foreignField: "_id",
-            as: "product"
-          }
-        },
-        { $unwind: "$product" },
-        {
-          $group: {
-            _id: "$product.category",
-            totalSold: { $sum: "$orderedItems.quantity" }
-          }
-        },
-        { $sort: { totalSold: -1 } },
-        { $limit: 10 },
-        {
-          $lookup: {
-            from: "categories",
-            localField: "_id",
-            foreignField: "_id",
-            as: "category"
-          }
-        },
-        { $unwind: "$category" },
-        {
-          $project: {
-            name: "$category.name",
-            totalSold: 1
-          }
-        }
-      ]);
+  { $match: match },
+  { $unwind: "$orderedItems" },
+  {
+    $lookup: {
+      from: "products",
+      localField: "orderedItems.product",
+      foreignField: "_id",
+      as: "product"
     }
+  },
+  { $unwind: "$product" },
+  {
+    $group: {
+      _id: "$product.category",
+      totalSold: { $sum: "$orderedItems.quantity" }
+    }
+  },
+  { $sort: { totalSold: -1 } },
+  { $limit: 10 },
+  {
+    $lookup: {
+      from: "categories",
+      localField: "_id",
+      foreignField: "_id",
+      as: "category"
+    }
+  },
+  { $unwind: "$category" },
+  {
+    $project: {
+      name: "$category.name",
+      totalSold: 1
+    }
+  }
+]);
+    }
+console.log("===== Top Products =====");
+console.log(topProducts);
 
+console.log("===== Top Categories =====");
+console.log(topCategories);
     // Render EJS
     res.render('dashboard', {
       reportData,
@@ -299,6 +306,8 @@ const logout = async (req, res) => {
 
 
 
+
+
 const downloadSalesReportPDF = async (req, res) => {
   try {
     if (!req.session.admin) return res.redirect('/admin/login');
@@ -320,94 +329,72 @@ const downloadSalesReportPDF = async (req, res) => {
     let groupId;
     switch (groupBy) {
       case 'day':
-        groupId = {
-          year: { $year: '$createdOn' },
-          month: { $month: '$createdOn' },
-          day: { $dayOfMonth: '$createdOn' }
-        };
+        groupId = { year: { $year: '$createdOn' }, month: { $month: '$createdOn' }, day: { $dayOfMonth: '$createdOn' } };
         break;
       case 'week':
-        groupId = {
-          year: { $year: '$createdOn' },
-          week: { $week: '$createdOn' }
-        };
+        groupId = { year: { $year: '$createdOn' }, week: { $week: '$createdOn' } };
         break;
       case 'month':
-        groupId = {
-          year: { $year: '$createdOn' },
-          month: { $month: '$createdOn' }
-        };
+        groupId = { year: { $year: '$createdOn' }, month: { $month: '$createdOn' } };
         break;
       case 'year':
-        groupId = {
-          year: { $year: '$createdOn' }
-        };
+        groupId = { year: { $year: '$createdOn' } };
         break;
       default:
         groupId = null;
     }
 
-    const pipeline = [
-      { $match: match },
-      { $unwind: "$orderedItems" },
-      {
-        $group: {
-          _id: "$_id",
-          createdOn: { $first: "$createdOn" },
-          totalPrice: {
-            $sum: {
-              $multiply: ["$orderedItems.originalPrice", "$orderedItems.quantity"]
-            }
-          },
-          finalAmount: {
-            $sum: {
-              $multiply: ["$orderedItems.price", "$orderedItems.quantity"]
-            }
-          },
-          totalDiscount: {
-            $sum: {
-              $subtract: [
-                { $multiply: ["$orderedItems.originalPrice", "$orderedItems.quantity"] },
-                { $multiply: ["$orderedItems.price", "$orderedItems.quantity"] }
-              ]
-            }
-          }
-        }
-      },
-      {
-        $group: {
-          _id: groupId,
-          totalOrders: { $sum: 1 },
-          totalPrice: { $sum: "$totalPrice" },
-          totalDiscount: { $sum: "$totalDiscount" },
-          totalFinalAmount: { $sum: "$finalAmount" }
-        }
-      },
-      {
-        $project: {
-          _id: 1,
-          totalOrders: 1,
-          totalPrice: { $round: ["$totalPrice", 2] },
-          totalDiscount: { $round: ["$totalDiscount", 2] },
-          totalFinalAmount: { $round: ["$totalFinalAmount", 2] }
-        }
-      }
-    ];
+  let pipeline = [
+  { $match: match },
+  { $unwind: "$orderedItems" },
+  {
+    $group: {
+      _id: groupId, // <-- directly group by day/week/month/year
+      totalOrders: { $addToSet: "$_id" }, // set of unique orders
+      totalPrice: { $sum: { $multiply: ["$orderedItems.originalPrice", "$orderedItems.quantity"] } },
+      totalFinalAmount: { $sum: { $multiply: ["$orderedItems.price", "$orderedItems.quantity"] } }
+    }
+  },
+  {
+    $project: {
+      _id: 1,
+      totalOrders: { $size: "$totalOrders" }, // count unique orders
+      totalPrice: { $round: ["$totalPrice", 2] },
+      totalFinalAmount: { $round: ["$totalFinalAmount", 2] },
+      totalDiscount: { $round: [{ $subtract: ["$totalPrice", "$totalFinalAmount"] }, 2] }
+    }
+  },
+  { $sort: { "_id.year": 1, "_id.month": 1, "_id.day": 1 } }
+];
 
     const reportData = await Order.aggregate(pipeline);
 
-    const doc = new PDFDocument();
+    // PDF setup
+    const doc = new PDFDocument({ margin: 30, size: 'A4' });
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', 'attachment; filename=sales_report.pdf');
     doc.pipe(res);
 
-    doc.fontSize(16).text('Sales Report', { align: 'center' }).moveDown();
+    doc.fontSize(16).text(`Sales Report (${groupBy.toUpperCase()})`, { align: 'center' }).moveDown();
+
+    const monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
     reportData.forEach((entry, index) => {
+      let period = '';
+
+      if (groupBy === 'day') {
+        period = `${entry._id.day} ${monthNames[entry._id.month - 1]} ${entry._id.year}`;
+      } else if (groupBy === 'week') {
+        period = `Week ${entry._id.week}, ${entry._id.year}`;
+      } else if (groupBy === 'month') {
+        period = `${monthNames[entry._id.month - 1]} ${entry._id.year}`;
+      } else if (groupBy === 'year') {
+        period = `${entry._id.year}`;
+      }
+
       doc
         .fontSize(12)
-        .text(`${groupBy.toUpperCase()} ${index + 1}`)
-        .text(`Group: ${JSON.stringify(entry._id)}`)
+        .text(`Period: ${period}`)
         .text(`Total Orders: ${entry.totalOrders}`)
         .text(`Total Price: £ ${entry.totalPrice.toFixed(2)}`)
         .text(`Total Discount: £ ${entry.totalDiscount.toFixed(2)}`)
@@ -416,12 +403,12 @@ const downloadSalesReportPDF = async (req, res) => {
     });
 
     doc.end();
+
   } catch (error) {
     console.error('PDF download error:', error);
     res.status(500).send('Error generating PDF');
   }
 };
-
 
 
 
@@ -446,28 +433,16 @@ const downloadSalesReportExcel = async (req, res) => {
     let groupId;
     switch (groupBy) {
       case 'day':
-        groupId = {
-          year: { $year: '$createdOn' },
-          month: { $month: '$createdOn' },
-          day: { $dayOfMonth: '$createdOn' }
-        };
+        groupId = { year: { $year: '$createdOn' }, month: { $month: '$createdOn' }, day: { $dayOfMonth: '$createdOn' } };
         break;
       case 'week':
-        groupId = {
-          year: { $year: '$createdOn' },
-          week: { $week: '$createdOn' }
-        };
+        groupId = { year: { $year: '$createdOn' }, week: { $week: '$createdOn' } };
         break;
       case 'month':
-        groupId = {
-          year: { $year: '$createdOn' },
-          month: { $month: '$createdOn' }
-        };
+        groupId = { year: { $year: '$createdOn' }, month: { $month: '$createdOn' } };
         break;
       case 'year':
-        groupId = {
-          year: { $year: '$createdOn' }
-        };
+        groupId = { year: { $year: '$createdOn' } };
         break;
       default:
         return res.status(400).send('Invalid groupBy value');
@@ -478,65 +453,49 @@ const downloadSalesReportExcel = async (req, res) => {
       { $unwind: "$orderedItems" },
       {
         $group: {
-          _id: "$_id",
-          createdOn: { $first: "$createdOn" },
-          totalPrice: {
-            $sum: {
-              $multiply: ["$orderedItems.originalPrice", "$orderedItems.quantity"]
-            }
-          },
-          finalAmount: {
-            $sum: {
-              $multiply: ["$orderedItems.price", "$orderedItems.quantity"]
-            }
-          },
-          totalDiscount: {
-            $sum: {
-              $subtract: [
-                { $multiply: ["$orderedItems.originalPrice", "$orderedItems.quantity"] },
-                { $multiply: ["$orderedItems.price", "$orderedItems.quantity"] }
-              ]
-            }
-          }
-        }
-      },
-      {
-        $group: {
-          _id: groupId,
-          totalOrders: { $sum: 1 },
-          totalPrice: { $sum: "$totalPrice" },
-          totalDiscount: { $sum: "$totalDiscount" },
-          totalFinalAmount: { $sum: "$finalAmount" }
+          _id: groupId, // group directly by day/week/month/year
+          totalOrders: { $addToSet: "$_id" }, // unique orders
+          totalPrice: { $sum: { $multiply: ["$orderedItems.originalPrice", "$orderedItems.quantity"] } },
+          totalFinalAmount: { $sum: { $multiply: ["$orderedItems.price", "$orderedItems.quantity"] } }
         }
       },
       {
         $project: {
           _id: 1,
-          totalOrders: 1,
+          totalOrders: { $size: "$totalOrders" },
           totalPrice: { $round: ["$totalPrice", 2] },
-          totalDiscount: { $round: ["$totalDiscount", 2] },
+          totalDiscount: { $round: [{ $subtract: ["$totalPrice", "$totalFinalAmount"] }, 2] },
           totalFinalAmount: { $round: ["$totalFinalAmount", 2] }
         }
-      }
+      },
+      { $sort: { "_id.year": 1, "_id.month": 1, "_id.day": 1 } }
     ];
 
     const reportData = await Order.aggregate(pipeline);
 
-    // Create Excel workbook
+    // Excel setup
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('Sales Report');
 
     worksheet.columns = [
-      { header: 'Group', key: 'group', width: 30 },
+      { header: 'Period', key: 'period', width: 30 },
       { header: 'Total Orders', key: 'totalOrders', width: 15 },
       { header: 'Total Sales (£)', key: 'totalPrice', width: 18 },
       { header: 'Total Discount (£)', key: 'totalDiscount', width: 20 },
       { header: 'Final Amount (£)', key: 'finalAmount', width: 18 }
     ];
 
-    reportData.forEach((entry) => {
+    const monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+    reportData.forEach(entry => {
+      let period = '';
+      if (groupBy === 'day') period = `${entry._id.day} ${monthNames[entry._id.month - 1]} ${entry._id.year}`;
+      else if (groupBy === 'week') period = `Week ${entry._id.week}, ${entry._id.year}`;
+      else if (groupBy === 'month') period = `${monthNames[entry._id.month - 1]} ${entry._id.year}`;
+      else if (groupBy === 'year') period = `${entry._id.year}`;
+
       worksheet.addRow({
-        group: JSON.stringify(entry._id),
+        period,
         totalOrders: entry.totalOrders,
         totalPrice: entry.totalPrice.toFixed(2),
         totalDiscount: entry.totalDiscount.toFixed(2),
@@ -544,17 +503,12 @@ const downloadSalesReportExcel = async (req, res) => {
       });
     });
 
-    res.setHeader(
-      'Content-Disposition',
-      'attachment; filename="sales_report.xlsx"'
-    );
-    res.setHeader(
-      'Content-Type',
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-    );
+    res.setHeader('Content-Disposition', 'attachment; filename="sales_report.xlsx"');
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
 
     await workbook.xlsx.write(res);
     res.end();
+
   } catch (error) {
     console.error('Excel download error:', error);
     res.status(500).send('Error generating Excel report');

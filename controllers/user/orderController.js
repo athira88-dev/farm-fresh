@@ -152,6 +152,12 @@ console.log('✅ Order calculation (tax after discount):', {
   grandTotal,
 });
 
+// 🚫 COD restriction
+if (grandTotal > 10 && req.body.paymentMethod === "COD") {
+  return res.redirect('/checkout?error=COD_NOT_ALLOWED');
+}
+
+
 
     // Create and save the order with exact session amounts
     const newOrder = new Order({

@@ -93,58 +93,81 @@
 <% } %>
 
 <!-- ===== Top 10 Products ===== -->
-<% if (topProducts && topProducts.length > 0) { %>
-<div class="card mt-4">
+ <div class="card mt-4">
   <div class="card-body">
     <h4>Top 10 Selling Products</h4>
-    <canvas id="productChart" height="150"></canvas>
+
+    <% if (topProducts && topProducts.length > 0) { %>
+      <canvas id="productChart" height="150"></canvas>
+    <% } else { %>
+      <p class="text-muted">No product sales found for the selected period.</p>
+    <% } %>
+
   </div>
 </div>
-<% } %>
+
+
 
 <!-- ===== Top 10 Categories ===== -->
-<% if (topCategories && topCategories.length > 0) { %>
 <div class="card mt-4">
   <div class="card-body">
     <h4>Top 10 Selling Categories</h4>
-    <canvas id="categoryChart" height="150"></canvas>
+
+    <% if (topCategories && topCategories.length > 0) { %>
+      <canvas id="categoryChart" height="150"></canvas>
+    <% } else { %>
+      <p class="text-muted">No category sales found for the selected period.</p>
+    <% } %>
+
   </div>
 </div>
-<% } %>
+
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-  // Sales Chart
-  '<% if (chartLabels && chartData) { %>'
+  // ===== Sales Chart =====
+  <% if (chartLabels && chartData) { %>
   new Chart(document.getElementById('salesChart').getContext('2d'), {
     type: 'bar',
     data: {
-      labels: '<%- JSON.stringify(chartLabels) %>',
+      labels: <%- JSON.stringify(chartLabels) %>,
       datasets: [{
         label: 'Total Final Amount (£)',
         backgroundColor: 'rgba(54, 162, 235, 0.6)',
-        data: '<%- JSON.stringify(chartData) %>'
+        data: <%- JSON.stringify(chartData) %>
       }]
     },
     options: {
       responsive: true,
       scales: {
-        y: { beginAtZero: true }
+        x: {
+          title: {
+            display: true,
+            text: 'Time Period'
+          }
+        },
+        y: {
+          title: {
+            display: true,
+            text: 'Sales Amount (£)'
+          },
+          beginAtZero: true
+        }
       }
     }
   });
-  '<% } %>'
+  <% } %>
 
-  // Product Chart
-  '<% if (topProducts && topProducts.length > 0) { %>'
+  // ===== Top 10 Products Chart =====
+  <% if (topProducts && topProducts.length > 0) { %>
   new Chart(document.getElementById('productChart').getContext('2d'), {
     type: 'bar',
     data: {
-      labels: '<%- JSON.stringify(topProducts.map(p => p.name)) %>',
+      labels: <%- JSON.stringify(topProducts.map(p => p.name)) %>,
       datasets: [{
         label: 'Units Sold',
         backgroundColor: 'rgba(255, 99, 132, 0.6)',
-        data: '<%- JSON.stringify(topProducts.map(p => p.totalSold)) %>'
+        data: <%- JSON.stringify(topProducts.map(p => p.totalSold)) %>
       }]
     },
     options: {
@@ -155,18 +178,18 @@
       }
     }
   });
-  '<% } %>'
+  <% } %>
 
-  // Category Chart
-  '<% if (topCategories && topCategories.length > 0) { %>'
+  // ===== Top 10 Categories Chart =====
+  <% if (topCategories && topCategories.length > 0) { %>
   new Chart(document.getElementById('categoryChart').getContext('2d'), {
     type: 'bar',
     data: {
-      labels: '<%- JSON.stringify(topCategories.map(c => c.name)) %>',
+      labels: <%- JSON.stringify(topCategories.map(c => c.name)) %>,
       datasets: [{
         label: 'Units Sold',
         backgroundColor: 'rgba(255, 206, 86, 0.6)',
-        data: '<%- JSON.stringify(topCategories.map(c => c.totalSold)) %>'
+        data: <%- JSON.stringify(topCategories.map(c => c.totalSold)) %>
       }]
     },
     options: {
@@ -177,9 +200,8 @@
       }
     }
   });
-  '<% } %>'
+  <% } %>
 </script>
-
 
 
 
