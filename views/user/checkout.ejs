@@ -298,7 +298,8 @@
         <!-- Add this hidden field to pass the discount value -->
 <input type="hidden" name="discount" value="<%= discount || 0 %>">
 
-        <button type="submit" class="place-order-btn">Place Order</button>
+        <!-- <button type="submit" class="place-order-btn">Place Order</button> -->
+        <button type="submit" class="place-order-btn" id="placeOrderBtn" disabled>Place Order</button>
       </form>
  
   </div>
@@ -309,6 +310,9 @@
 
   <script src="https://www.paypal.com/sdk/js?client-id=AS6jTbViQm4oXSHQqT7q7i5kBXVev28yI0DvXDJtGQLfDF09_EtL91mtKbNB7y8dZBAFt59OlDIKhbb3&currency=GBP"></script>
 
+
+
+  
 <script>
          const selectedAddressInput = document.querySelector('input[name="selectedAddressId"]:checked');
   const selectedAddressId = selectedAddressInput ? selectedAddressInput.value : null;
@@ -403,6 +407,8 @@
 
 
 
+
+
 <!-- coupon -->
 <script>
   document.getElementById('applyCouponBtn').addEventListener('click', async () => {
@@ -485,7 +491,23 @@
 });
 </script>
 
+<script>
+  // ✅ Use the existing placeOrderBtn variable
+  const paymentRadios = document.querySelectorAll('input[name="paymentMethod"]');
 
+  const updatePlaceOrderState = () => {
+    const anySelected = Array.from(paymentRadios).some(radio => radio.checked && !radio.disabled);
+    placeOrderBtn.disabled = !anySelected;
+  };
+
+  // Run once in case some radio is pre-selected
+  updatePlaceOrderState();
+
+  // Listen to changes in payment options
+  paymentRadios.forEach(radio => {
+    radio.addEventListener('change', updatePlaceOrderState);
+  });
+</script>
 
 
   

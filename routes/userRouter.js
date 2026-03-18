@@ -83,9 +83,10 @@ router.post('/delete-address/:addressId', userAuth, addressController.postDelete
 //Cart Management
 router.post('/add-to-cart',userAuth,cartController.addToCart);
 router.get('/cart', userAuth, cartController.viewCart);
-router.post('/cart/increase',userAuth,cartController.increaseQuantity);
+// router.post('/cart/increase',userAuth,cartController.increaseQuantity);
 router.post('/cart/update-quantity',userAuth, cartController.updateCartQuantity);
 router.post('/cart/remove', userAuth, cartController.removeFromCart);
+router.get('/checkout', userAuth, cartController.proceedToCheckout);
 
 //Wishlist Management
 // Add product to wishlist
